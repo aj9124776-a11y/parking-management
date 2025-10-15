@@ -596,6 +596,9 @@
                     <button id="add-client-btn" class="btn btn-success">
                         <i class="fas fa-plus"></i> Agregar Cliente
                     </button>
+                    <button id="reset-data-btn" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Resetear Datos
+                    </button>
                 </div>
                 
                 <div class="search-bar">
@@ -814,47 +817,96 @@
     </footer>
 
     <script>
-        // Datos de ejemplo - SOLO ADMIN
-        const users = [
-            {
-                id: 1,
-                name: "Administrador",
-                email: "admin@parkmaster.com",
-                password: "andy123456",
-                role: "admin",
-                phone: "123-456-7890",
-                address: "Av. Principal 123"
+        // ==================== SISTEMA DE ALMACENAMIENTO PERSISTENTE ====================
+        
+        // Función para guardar datos en LocalStorage
+        function saveToLocalStorage(key, data) {
+            localStorage.setItem(key, JSON.stringify(data));
+        }
+
+        // Función para cargar datos desde LocalStorage
+        function loadFromLocalStorage(key, defaultValue = []) {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : defaultValue;
+        }
+
+        // Función para inicializar datos por primera vez
+        function initializeData() {
+            // Verificar si ya existen datos en LocalStorage
+            const existingUsers = loadFromLocalStorage('parkingUsers');
+            const existingClients = loadFromLocalStorage('parkingClients');
+            const existingSpaces = loadFromLocalStorage('parkingSpaces');
+
+            // Si no hay datos, inicializar con datos por defecto
+            if (existingUsers.length === 0) {
+                const defaultUsers = [
+                    {
+                        id: 1,
+                        name: "Administrador",
+                        email: "admin@parkmaster.com",
+                        password: "andy123456",
+                        role: "admin",
+                        phone: "123-456-7890",
+                        address: "Av. Principal 123"
+                    }
+                ];
+                saveToLocalStorage('parkingUsers', defaultUsers);
             }
-        ];
 
-        const clients = [];
+            if (existingSpaces.length === 0) {
+                const defaultSpaces = [];
+                
+                // Generar 140 espacios (A-01 a A-50, B-01 a B-50, C-01 a C-40)
+                for (let i = 1; i <= 50; i++) {
+                    defaultSpaces.push({
+                        id: `A-${i.toString().padStart(2, '0')}`,
+                        status: "available"
+                    });
+                }
+                
+                for (let i = 1; i <= 50; i++) {
+                    defaultSpaces.push({
+                        id: `B-${i.toString().padStart(2, '0')}`,
+                        status: "available"
+                    });
+                }
+                
+                for (let i = 1; i <= 40; i++) {
+                    defaultSpaces.push({
+                        id: `C-${i.toString().padStart(2, '0')}`,
+                        status: "available"
+                    });
+                }
+                
+                saveToLocalStorage('parkingSpaces', defaultSpaces);
+            }
 
-        // Generar 140 espacios (A-01 a A-50, B-01 a B-50, C-01 a C-40)
-        const spaces = [];
-        
-        // Generar espacios A-01 a A-50
-        for (let i = 1; i <= 50; i++) {
-            spaces.push({
-                id: `A-${i.toString().padStart(2, '0')}`,
-                status: "available"
-            });
+            // Cargar datos actualizados
+            return {
+                users: loadFromLocalStorage('parkingUsers'),
+                clients: loadFromLocalStorage('parkingClients'),
+                spaces: loadFromLocalStorage('parkingSpaces')
+            };
         }
-        
-        // Generar espacios B-01 a B-50
-        for (let i = 1; i <= 50; i++) {
-            spaces.push({
-                id: `B-${i.toString().padStart(2, '0')}`,
-                status: "available"
-            });
+
+        // Función para resetear todos los datos
+        function resetAllData() {
+            if (confirm('¿Estás seguro de que quieres resetear todos los datos? Esta acción no se puede deshacer.')) {
+                localStorage.removeItem('parkingUsers');
+                localStorage.removeItem('parkingClients');
+                localStorage.removeItem('parkingSpaces');
+                alert('Datos reseteados. La página se recargará.');
+                location.reload();
+            }
         }
+
+        // ==================== DATOS INICIALES ====================
         
-        // Generar espacios C-01 a C-40
-        for (let i = 1; i <= 40; i++) {
-            spaces.push({
-                id: `C-${i.toString().padStart(2, '0')}`,
-                status: "available"
-            });
-        }
+        // Inicializar datos
+        const data = initializeData();
+        let users = data.users;
+        let clients = data.clients;
+        let spaces = data.spaces;
 
         // Estado de la aplicación
         let currentUser = null;
@@ -868,6 +920,7 @@
         const loginPassword = document.getElementById('login-password');
         const loginBtn = document.getElementById('login-btn');
         const logoutBtn = document.getElementById('logout-btn');
+        const resetDataBtn = document.getElementById('reset-data-btn');
         const userName = document.getElementById('user-name');
         const userRole = document.getElementById('user-role');
         const adminNav = document.getElementById('admin-nav');
@@ -923,11 +976,14 @@
         const profilePlate = document.getElementById('profile-plate');
         const profileRole = document.getElementById('profile-role');
 
+        // ==================== FUNCIONES PRINCIPALES ====================
+
         // Inicializar la aplicación
         function init() {
             // Event listeners
             loginBtn.addEventListener('click', handleLogin);
             logoutBtn.addEventListener('click', handleLogout);
+            resetDataBtn.addEventListener('click', resetAllData);
             
             // Navegación entre módulos
             navLinks.forEach(link => {
@@ -997,6 +1053,12 @@
                 alert('Por favor, completa todos los campos');
                 return;
             }
+            
+            // Recargar datos antes de verificar login
+            const currentData = initializeData();
+            users = currentData.users;
+            clients = currentData.clients;
+            spaces = currentData.spaces;
             
             const user = users.find(u => u.email === email && u.password === password);
             
@@ -1471,6 +1533,10 @@
                 updateSpaceAssignment(null, space, newClient.id);
             }
             
+            // GUARDAR EN LOCALSTORAGE
+            saveToLocalStorage('parkingClients', clients);
+            saveToLocalStorage('parkingSpaces', spaces);
+            
             updateStats();
             renderClientsDashboard();
             renderClients();
@@ -1540,6 +1606,9 @@
                 amount,
                 method: "Renovación"
             });
+            
+            // GUARDAR EN LOCALSTORAGE
+            saveToLocalStorage('parkingClients', clients);
             
             updateStats();
             renderClientsDashboard();

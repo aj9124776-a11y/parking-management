@@ -1,0 +1,3031 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParkMaster - Gestión de Estacionamiento</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --admin-color: #9b59b6;
+            --client-color: #1abc9c;
+            --accounting-color: #16a085;
+            --info-color: #2980b9;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header y Navegación */
+        header {
+            background: linear-gradient(135deg, var(--dark-color) 0%, #34495e 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo i {
+            color: var(--primary-color);
+        }
+        
+        .logo span {
+            color: var(--primary-color);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-role {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .user-role.admin {
+            background-color: var(--admin-color);
+        }
+        
+        .user-role.client {
+            background-color: var(--client-color);
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        
+        nav ul li {
+            margin-left: 20px;
+        }
+        
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        nav ul li a:hover, nav ul li a.active {
+            background-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+        
+        /* Login */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+        }
+        
+        .login-form {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            border-top: 5px solid var(--primary-color);
+        }
+        
+        .login-form h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        /* Módulos */
+        .module {
+            display: none;
+            background-color: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .module.active {
+            display: block;
+        }
+        
+        h2 {
+            color: var(--dark-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Tarjetas de Clientes/Espacios */
+        .client-card, .space-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            border-left: 5px solid var(--primary-color);
+            transition: all 0.3s;
+        }
+        
+        .client-card:hover, .space-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .client-card.active {
+            border-left-color: var(--secondary-color);
+        }
+        
+        .client-card.expired {
+            border-left-color: var(--danger-color);
+        }
+        
+        .client-card.warning {
+            border-left-color: var(--warning-color);
+        }
+        
+        .space-card.available {
+            border-left-color: var(--secondary-color);
+        }
+        
+        .space-card.occupied {
+            border-left-color: var(--primary-color);
+        }
+        
+        .space-card.maintenance {
+            border-left-color: var(--warning-color);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .client-name, .space-name {
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+        
+        .status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .status.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .status.expired {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .status.warning {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .status.available {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .status.occupied {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .status.maintenance {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .card-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .detail-item {
+            margin-bottom: 8px;
+        }
+        
+        .detail-label {
+            font-weight: bold;
+            color: #777;
+            font-size: 0.9rem;
+        }
+        
+        /* Botones y Acciones */
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-success {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .btn-admin {
+            background-color: var(--admin-color);
+            color: white;
+        }
+        
+        .btn-client {
+            background-color: var(--client-color);
+            color: white;
+        }
+        
+        .btn-accounting {
+            background-color: var(--accounting-color);
+            color: white;
+        }
+        
+        .btn-info {
+            background-color: var(--info-color);
+            color: white;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        /* Formularios */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--dark-color);
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        /* Búsqueda */
+        .search-bar {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .search-bar input {
+            padding: 12px 45px 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            width: 100%;
+        }
+        
+        .search-bar i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #777;
+        }
+        
+        /* Estadísticas */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        
+        .stat-card.active {
+            border-top: 4px solid var(--secondary-color);
+        }
+        
+        .stat-card.expired {
+            border-top: 4px solid var(--danger-color);
+        }
+        
+        .stat-card.warning {
+            border-top: 4px solid var(--warning-color);
+        }
+        
+        .stat-card.total {
+            border-top: 4px solid var(--primary-color);
+        }
+        
+        .stat-card.income {
+            border-top: 4px solid var(--accounting-color);
+        }
+        
+        .stat-card.info {
+            border-top: 4px solid var(--info-color);
+        }
+        
+        /* Grid de Espacios */
+        .spaces-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .space-item {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .space-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .space-item.available {
+            background-color: #e8f5e8;
+            border: 2px solid var(--secondary-color);
+        }
+        
+        .space-item.occupied {
+            background-color: #e3f2fd;
+            border: 2px solid var(--primary-color);
+        }
+        
+        .space-item.maintenance {
+            background-color: #fef9e7;
+            border: 2px solid var(--warning-color);
+        }
+        
+        .space-number {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .space-info {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .space-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+        
+        .space-actions .btn {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+        
+        /* Estados vacíos */
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+        
+        /* Tablas */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: white;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background-color: var(--light-color);
+            font-weight: bold;
+            color: var(--dark-color);
+            position: sticky;
+            top: 0;
+        }
+        
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .income-positive {
+            color: var(--secondary-color);
+            font-weight: bold;
+        }
+        
+        .income-negative {
+            color: var(--danger-color);
+            font-weight: bold;
+        }
+        
+        /* Filtros de contabilidad */
+        .filters {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        /* Gráficos */
+        .chart-container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        .chart-placeholder {
+            height: 300px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #666;
+            font-size: 1.2rem;
+        }
+        
+        /* Notificaciones */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: translateX(120%);
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background-color: var(--secondary-color);
+        }
+        
+        .notification.error {
+            background-color: var(--danger-color);
+        }
+        
+        .notification.warning {
+            background-color: var(--warning-color);
+        }
+        
+        /* Carga */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 25px;
+            color: #777;
+            border-top: 1px solid #ddd;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            
+            nav ul {
+                margin-top: 15px;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            nav ul li {
+                margin: 0;
+            }
+            
+            .card-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .spaces-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+            
+            .filter-row {
+                flex-direction: column;
+            }
+            
+            .filter-group {
+                width: 100%;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .module {
+                padding: 15px;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .spaces-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Notificaciones -->
+    <div id="notification" class="notification"></div>
+    
+    <!-- Pantalla de Login -->
+    <div id="login-screen">
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <i class="fas fa-parking"></i>
+                        Park<span>Master</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="container">
+            <div class="login-container">
+                <div class="login-form">
+                    <h2><i class="fas fa-parking"></i> Iniciar Sesión</h2>
+                    <div class="form-group">
+                        <label for="login-email"><i class="fas fa-envelope"></i> Email</label>
+                        <input type="email" id="login-email" placeholder="tu@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password"><i class="fas fa-lock"></i> Contraseña</label>
+                        <input type="password" id="login-password" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <button id="login-btn" class="btn btn-primary" style="width: 100%;">
+                            <i class="fas fa-sign-in-alt"></i> Ingresar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Aplicación Principal (oculta inicialmente) -->
+    <div id="app" style="display: none;">
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <i class="fas fa-parking"></i>
+                        Park<span>Master</span>
+                    </div>
+                    <nav>
+                        <ul>
+                            <li><a href="#" class="nav-link active" data-module="dashboard">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a></li>
+                            <li id="admin-nav" style="display: none;">
+                                <a href="#" class="nav-link" data-module="clients">
+                                    <i class="fas fa-users"></i> Clientes
+                                </a>
+                            </li>
+                            <li id="admin-nav2" style="display: none;">
+                                <a href="#" class="nav-link" data-module="spaces">
+                                    <i class="fas fa-car"></i> Espacios
+                                </a>
+                            </li>
+                            <li id="admin-nav3" style="display: none;">
+                                <a href="#" class="nav-link" data-module="accounting">
+                                    <i class="fas fa-chart-line"></i> Contabilidad
+                                </a>
+                            </li>
+                            <li><a href="#" class="nav-link" data-module="profile">
+                                <i class="fas fa-user"></i> Mi Perfil
+                            </a></li>
+                        </ul>
+                    </nav>
+                    <div class="user-info">
+                        <span id="user-name">Usuario</span>
+                        <span id="user-role" class="user-role">Rol</span>
+                        <button id="logout-btn" class="btn btn-danger">
+                            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="container">
+            <!-- Dashboard -->
+            <div id="dashboard" class="module active">
+                <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
+                <div id="admin-dashboard" style="display: none;">
+                    <div class="stats">
+                        <div class="stat-card total">
+                            <div class="stat-label">Total Clientes</div>
+                            <div class="stat-value" id="total-clients">0</div>
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-card active">
+                            <div class="stat-label">Suscripciones Activas</div>
+                            <div class="stat-value" id="active-subscriptions">0</div>
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-card warning">
+                            <div class="stat-label">Por Vencer</div>
+                            <div class="stat-value" id="warning-subscriptions">0</div>
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-card expired">
+                            <div class="stat-label">Vencidas</div>
+                            <div class="stat-value" id="expired-subscriptions">0</div>
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="stat-card income">
+                            <div class="stat-label">Ingreso Mensual</div>
+                            <div class="stat-value" id="monthly-income">$0</div>
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-card info">
+                            <div class="stat-label">Espacios Ocupados</div>
+                            <div class="stat-value" id="occupied-percentage">0%</div>
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                    </div>
+                    
+                    <h3><i class="fas fa-users"></i> Clientes Recientes</h3>
+                    <div class="search-bar">
+                        <input type="text" id="search-dashboard" placeholder="Buscar cliente...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    
+                    <div id="clients-list-dashboard">
+                        <!-- Los clientes se cargarán aquí dinámicamente -->
+                    </div>
+                </div>
+                
+                <div id="client-dashboard" style="display: none;">
+                    <div class="client-card active">
+                        <div class="card-header">
+                            <div class="client-name" id="client-dash-name">Nombre del Cliente</div>
+                            <div class="status active" id="client-dash-status">Activa</div>
+                        </div>
+                        <div class="card-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Vehículo:</span>
+                                <span id="client-dash-vehicle">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Placa:</span>
+                                <span id="client-dash-plate">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Espacio Asignado:</span>
+                                <span id="client-dash-space">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Próximo Vencimiento:</span>
+                                <span id="client-dash-expiry">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Días Restantes:</span>
+                                <span id="client-dash-days">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Monto Mensual:</span>
+                                <span id="client-dash-amount">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-top: 30px;"><i class="fas fa-history"></i> Historial de Pagos</h3>
+                    <div id="payment-history">
+                        <!-- El historial se cargará aquí dinámicamente -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Módulo Gestión de Clientes (Solo Admin) -->
+            <div id="clients" class="module">
+                <h2><i class="fas fa-users"></i> Gestión de Clientes</h2>
+                
+                <div class="actions" style="margin-bottom: 20px;">
+                    <button id="add-client-btn" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Agregar Cliente
+                    </button>
+                    <button id="export-clients-btn" class="btn btn-info">
+                        <i class="fas fa-file-export"></i> Exportar Datos
+                    </button>
+                    <button id="reset-data-btn" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Resetear Datos
+                    </button>
+                </div>
+                
+                <div class="search-bar">
+                    <input type="text" id="search-clients" placeholder="Buscar por nombre, placa o email...">
+                    <i class="fas fa-search"></i>
+                </div>
+                
+                <div id="clients-list">
+                    <!-- Los clientes se cargarán aquí dinámicamente -->
+                </div>
+            </div>
+            
+            <!-- Módulo Gestión de Espacios (Solo Admin) -->
+            <div id="spaces" class="module">
+                <h2><i class="fas fa-car"></i> Gestión de Espacios</h2>
+                
+                <div class="stats">
+                    <div class="stat-card total">
+                        <div class="stat-label">Total Espacios</div>
+                        <div class="stat-value" id="total-spaces">140</div>
+                        <i class="fas fa-parking"></i>
+                    </div>
+                    <div class="stat-card available">
+                        <div class="stat-label">Disponibles</div>
+                        <div class="stat-value" id="available-spaces">0</div>
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-card occupied">
+                        <div class="stat-label">Ocupados</div>
+                        <div class="stat-value" id="occupied-spaces">0</div>
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-label">En Mantenimiento</div>
+                        <div class="stat-value" id="maintenance-spaces">0</div>
+                        <i class="fas fa-tools"></i>
+                    </div>
+                </div>
+                
+                <div class="actions" style="margin-bottom: 20px;">
+                    <button id="add-space-btn" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Agregar Espacio
+                    </button>
+                    <button id="bulk-maintenance-btn" class="btn btn-warning">
+                        <i class="fas fa-tools"></i> Gestión Masiva
+                    </button>
+                </div>
+                
+                <h3><i class="fas fa-map"></i> Mapa de Espacios</h3>
+                <div class="spaces-grid" id="spaces-grid">
+                    <!-- Los espacios se cargarán aquí dinámicamente -->
+                </div>
+            </div>
+            
+            <!-- Módulo Contabilidad (Solo Admin) -->
+            <div id="accounting" class="module">
+                <h2><i class="fas fa-chart-line"></i> Contabilidad</h2>
+                
+                <div class="stats">
+                    <div class="stat-card income">
+                        <div class="stat-label">Ingresos del Mes</div>
+                        <div class="stat-value" id="current-month-income">$0</div>
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-card total">
+                        <div class="stat-label">Ingresos Totales</div>
+                        <div class="stat-value" id="total-income">$0</div>
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="stat-card active">
+                        <div class="stat-label">Clientes Activos</div>
+                        <div class="stat-value" id="accounting-active-clients">0</div>
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-card info">
+                        <div class="stat-label">Tasa de Ocupación</div>
+                        <div class="stat-value" id="occupancy-rate">0%</div>
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                </div>
+                
+                <div class="filters">
+                    <h3><i class="fas fa-filter"></i> Filtros</h3>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="accounting-year">Año</label>
+                            <select id="accounting-year">
+                                <!-- Los años se cargarán dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="accounting-month">Mes</label>
+                            <select id="accounting-month">
+                                <option value="all">Todos los meses</option>
+                                <option value="1">Enero</option>
+                                <option value="2">Febrero</option>
+                                <option value="3">Marzo</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Mayo</option>
+                                <option value="6">Junio</option>
+                                <option value="7">Julio</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Septiembre</option>
+                                <option value="10">Octubre</option>
+                                <option value="11">Noviembre</option>
+                                <option value="12">Diciembre</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="accounting-client">Cliente</label>
+                            <select id="accounting-client">
+                                <option value="all">Todos los clientes</option>
+                                <!-- Los clientes se cargarán dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <button id="apply-filters" class="btn btn-accounting" style="margin-top: 22px;">
+                                <i class="fas fa-filter"></i> Aplicar Filtros
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3><i class="fas fa-chart-bar"></i> Ingresos Mensuales</h3>
+                    <div class="chart-placeholder">
+                        <i class="fas fa-chart-bar"></i> Gráfico de ingresos mensuales
+                    </div>
+                </div>
+                
+                <h3><i class="fas fa-table"></i> Detalle de Ingresos</h3>
+                <div class="table-container">
+                    <table id="income-table">
+                        <thead>
+                            <tr>
+                                <th>Mes/Año</th>
+                                <th>Clientes Activos</th>
+                                <th>Ingresos</th>
+                                <th>Promedio por Cliente</th>
+                                <th>Espacios Ocupados</th>
+                                <th>Tasa de Ocupación</th>
+                            </tr>
+                        </thead>
+                        <tbody id="income-table-body">
+                            <!-- Los datos se cargarán aquí dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <h3><i class="fas fa-receipt"></i> Historial de Pagos</h3>
+                <div class="table-container">
+                    <table id="payments-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Cliente</th>
+                                <th>Concepto</th>
+                                <th>Monto</th>
+                                <th>Método</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payments-table-body">
+                            <!-- Los pagos se cargarán aquí dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Módulo Perfil de Usuario -->
+            <div id="profile" class="module">
+                <h2><i class="fas fa-user"></i> Mi Perfil</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="profile-name">Nombre Completo</label>
+                        <input type="text" id="profile-name" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-email">Email</label>
+                        <input type="email" id="profile-email" readonly>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="profile-phone">Teléfono</label>
+                        <input type="text" id="profile-phone" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-address">Dirección</label>
+                        <input type="text" id="profile-address" readonly>
+                    </div>
+                </div>
+                
+                <div id="admin-profile-fields" style="display: none;">
+                    <h3><i class="fas fa-user-shield"></i> Información de Administrador</h3>
+                    <div class="form-group">
+                        <label for="profile-role">Rol</label>
+                        <input type="text" id="profile-role" value="Administrador" readonly>
+                    </div>
+                </div>
+                
+                <div id="client-profile-fields">
+                    <h3><i class="fas fa-car"></i> Información del Vehículo</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="profile-vehicle">Vehículo</label>
+                            <input type="text" id="profile-vehicle" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-plate">Placa</label>
+                            <input type="text" id="profile-plate" readonly>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="actions" style="margin-top: 30px;">
+                    <button id="change-password-btn" class="btn btn-warning">
+                        <i class="fas fa-key"></i> Cambiar Contraseña
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para agregar/editar cliente -->
+    <div id="client-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="background-color: white; width: 90%; max-width: 600px; margin: 50px auto; padding: 25px; border-radius: 12px; max-height: 90vh; overflow-y: auto;">
+            <h2 id="modal-title"><i class="fas fa-user-plus"></i> Agregar Cliente</h2>
+            
+            <form id="client-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="client-name"><i class="fas fa-user"></i> Nombre Completo *</label>
+                        <input type="text" id="client-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="client-email"><i class="fas fa-envelope"></i> Email *</label>
+                        <input type="email" id="client-email" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="client-password"><i class="fas fa-lock"></i> Contraseña *</label>
+                        <input type="password" id="client-password" required placeholder="Mínimo 6 caracteres">
+                        <small style="color: #666;">Esta será la contraseña para que el cliente inicie sesión</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="client-phone"><i class="fas fa-phone"></i> Teléfono</label>
+                        <input type="tel" id="client-phone">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="client-address"><i class="fas fa-home"></i> Dirección</label>
+                        <input type="text" id="client-address">
+                    </div>
+                </div>
+                
+                <h3><i class="fas fa-car"></i> Información del Vehículo</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vehicle-plate"><i class="fas fa-id-card"></i> Placa *</label>
+                        <input type="text" id="vehicle-plate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicle-model"><i class="fas fa-car-side"></i> Marca/Modelo *</label>
+                        <input type="text" id="vehicle-model" required>
+                    </div>
+                </div>
+                
+                <h3><i class="fas fa-calendar-alt"></i> Suscripción Inicial</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="subscription-space"><i class="fas fa-parking"></i> Espacio Asignado *</label>
+                        <select id="subscription-space" required>
+                            <option value="">Seleccionar espacio</option>
+                            <!-- Los espacios disponibles se cargarán aquí -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="subscription-start"><i class="fas fa-calendar"></i> Fecha de Inicio *</label>
+                        <input type="date" id="subscription-start" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="subscription-duration"><i class="fas fa-clock"></i> Duración (meses) *</label>
+                        <select id="subscription-duration" required>
+                            <option value="1">1 mes</option>
+                            <option value="3" selected>3 meses</option>
+                            <option value="6">6 meses</option>
+                            <option value="12">12 meses</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="subscription-amount"><i class="fas fa-dollar-sign"></i> Monto Mensual *</label>
+                        <input type="number" id="subscription-amount" required min="0" step="0.01">
+                    </div>
+                </div>
+                
+                <div class="actions">
+                    <button type="button" id="cancel-client" class="btn btn-danger">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> Guardar Cliente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal para renovar suscripción -->
+    <div id="renew-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="background-color: white; width: 90%; max-width: 500px; margin: 50px auto; padding: 25px; border-radius: 12px;">
+            <h2><i class="fas fa-sync-alt"></i> Renovar Suscripción</h2>
+            
+            <form id="renew-form">
+                <div class="form-group">
+                    <label for="renew-client">Cliente</label>
+                    <input type="text" id="renew-client" readonly style="background-color: #f8f9fa;">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="renew-start">Fecha de Inicio *</label>
+                        <input type="date" id="renew-start" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="renew-duration">Duración (meses) *</label>
+                        <select id="renew-duration" required>
+                            <option value="1">1 mes</option>
+                            <option value="3" selected>3 meses</option>
+                            <option value="6">6 meses</option>
+                            <option value="12">12 meses</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="renew-amount">Monto Mensual *</label>
+                    <input type="number" id="renew-amount" required min="0" step="0.01">
+                </div>
+                
+                <div class="actions">
+                    <button type="button" id="cancel-renew" class="btn btn-danger">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-sync-alt"></i> Renovar Suscripción
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal para reasignar espacio -->
+    <div id="reassign-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="background-color: white; width: 90%; max-width: 500px; margin: 50px auto; padding: 25px; border-radius: 12px;">
+            <h2><i class="fas fa-exchange-alt"></i> Reasignar Espacio</h2>
+            
+            <form id="reassign-form">
+                <div class="form-group">
+                    <label for="reassign-client">Cliente</label>
+                    <input type="text" id="reassign-client" readonly style="background-color: #f8f9fa;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="reassign-current-space">Espacio Actual</label>
+                    <input type="text" id="reassign-current-space" readonly style="background-color: #f8f9fa;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="reassign-new-space">Nuevo Espacio *</label>
+                    <select id="reassign-new-space" required>
+                        <option value="">Seleccionar nuevo espacio</option>
+                        <!-- Los espacios disponibles se cargarán aquí -->
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="reassign-reason">Motivo de Reasignación</label>
+                    <textarea id="reassign-reason" rows="3" placeholder="Opcional"></textarea>
+                </div>
+                
+                <div class="actions">
+                    <button type="button" id="cancel-reassign" class="btn btn-danger">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-exchange-alt"></i> Reasignar Espacio
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal para cambiar contraseña -->
+    <div id="password-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="background-color: white; width: 90%; max-width: 500px; margin: 50px auto; padding: 25px; border-radius: 12px;">
+            <h2><i class="fas fa-key"></i> Cambiar Contraseña</h2>
+            
+            <form id="password-form">
+                <div class="form-group">
+                    <label for="current-password">Contraseña Actual</label>
+                    <input type="password" id="current-password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="new-password">Nueva Contraseña</label>
+                    <input type="password" id="new-password" required minlength="6">
+                    <small style="color: #666;">Mínimo 6 caracteres</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm-password">Confirmar Nueva Contraseña</label>
+                    <input type="password" id="confirm-password" required>
+                </div>
+                
+                <div class="actions">
+                    <button type="button" id="cancel-password" class="btn btn-danger">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> Cambiar Contraseña
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <footer>
+        <div class="container">
+            <p>ParkMaster - Sistema de Gestión de Estacionamiento &copy; 2023</p>
+            <p style="margin-top: 10px; font-size: 0.9rem; color: #999;">
+                <i class="fas fa-shield-alt"></i> Sistema seguro | 
+                <i class="fas fa-mobile-alt"></i> Diseño responsive | 
+                <i class="fas fa-cloud"></i> Datos locales
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // ==================== SISTEMA DE ALMACENAMIENTO PERSISTENTE ====================
+        
+        // Función para guardar datos en LocalStorage
+        function saveToLocalStorage(key, data) {
+            localStorage.setItem(key, JSON.stringify(data));
+        }
+
+        // Función para cargar datos desde LocalStorage
+        function loadFromLocalStorage(key, defaultValue = []) {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : defaultValue;
+        }
+
+        // Función para inicializar datos por primera vez
+        function initializeData() {
+            // Verificar si ya existen datos en LocalStorage
+            const existingUsers = loadFromLocalStorage('parkingUsers');
+            const existingClients = loadFromLocalStorage('parkingClients');
+            const existingSpaces = loadFromLocalStorage('parkingSpaces');
+
+            // Si no hay datos, inicializar con datos por defecto
+            if (existingUsers.length === 0) {
+                const defaultUsers = [
+                    {
+                        id: 1,
+                        name: "Administrador Principal",
+                        email: "admin@parkmaster.com",
+                        password: "admin123",
+                        role: "admin",
+                        phone: "+1 234-567-8900",
+                        address: "Av. Principal 123, Ciudad"
+                    }
+                ];
+                saveToLocalStorage('parkingUsers', defaultUsers);
+            }
+
+            if (existingSpaces.length === 0) {
+                const defaultSpaces = [];
+                
+                // Generar 140 espacios (A-01 a A-50, B-01 a B-50, C-01 a C-40)
+                for (let i = 1; i <= 50; i++) {
+                    defaultSpaces.push({
+                        id: `A-${i.toString().padStart(2, '0')}`,
+                        status: "available",
+                        type: "standard",
+                        maintenance: false
+                    });
+                }
+                
+                for (let i = 1; i <= 50; i++) {
+                    defaultSpaces.push({
+                        id: `B-${i.toString().padStart(2, '0')}`,
+                        status: "available",
+                        type: "standard", 
+                        maintenance: false
+                    });
+                }
+                
+                for (let i = 1; i <= 40; i++) {
+                    defaultSpaces.push({
+                        id: `C-${i.toString().padStart(2, '0')}`,
+                        status: "available",
+                        type: "premium",
+                        maintenance: false
+                    });
+                }
+                
+                saveToLocalStorage('parkingSpaces', defaultSpaces);
+            }
+
+            // Cargar datos actualizados
+            return {
+                users: loadFromLocalStorage('parkingUsers'),
+                clients: loadFromLocalStorage('parkingClients'),
+                spaces: loadFromLocalStorage('parkingSpaces')
+            };
+        }
+
+        // Función para resetear todos los datos
+        function resetAllData() {
+            if (confirm('¿Estás seguro de que quieres resetear todos los datos? Esta acción no se puede deshacer y se perderá toda la información.')) {
+                localStorage.removeItem('parkingUsers');
+                localStorage.removeItem('parkingClients');
+                localStorage.removeItem('parkingSpaces');
+                showNotification('Datos reseteados correctamente. La página se recargará.', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            }
+        }
+
+        // ==================== DATOS INICIALES ====================
+        
+        // Inicializar datos
+        const data = initializeData();
+        let users = data.users;
+        let clients = data.clients;
+        let spaces = data.spaces;
+
+        // Estado de la aplicación
+        let currentUser = null;
+        let currentEditingClient = null;
+        let currentRenewingClient = null;
+        let currentReassigningClient = null;
+
+        // Elementos del DOM
+        const loginScreen = document.getElementById('login-screen');
+        const app = document.getElementById('app');
+        const loginEmail = document.getElementById('login-email');
+        const loginPassword = document.getElementById('login-password');
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const resetDataBtn = document.getElementById('reset-data-btn');
+        const exportClientsBtn = document.getElementById('export-clients-btn');
+        const addSpaceBtn = document.getElementById('add-space-btn');
+        const bulkMaintenanceBtn = document.getElementById('bulk-maintenance-btn');
+        const changePasswordBtn = document.getElementById('change-password-btn');
+        const userName = document.getElementById('user-name');
+        const userRole = document.getElementById('user-role');
+        const adminNav = document.getElementById('admin-nav');
+        const adminNav2 = document.getElementById('admin-nav2');
+        const adminNav3 = document.getElementById('admin-nav3');
+        
+        const modules = document.querySelectorAll('.module');
+        const navLinks = document.querySelectorAll('.nav-link');
+        
+        const adminDashboard = document.getElementById('admin-dashboard');
+        const clientDashboard = document.getElementById('client-dashboard');
+        
+        const clientsListDashboard = document.getElementById('clients-list-dashboard');
+        const clientsList = document.getElementById('clients-list');
+        const searchDashboard = document.getElementById('search-dashboard');
+        const searchClients = document.getElementById('search-clients');
+        
+        const addClientBtn = document.getElementById('add-client-btn');
+        const clientModal = document.getElementById('client-modal');
+        const renewModal = document.getElementById('renew-modal');
+        const reassignModal = document.getElementById('reassign-modal');
+        const passwordModal = document.getElementById('password-modal');
+        const clientForm = document.getElementById('client-form');
+        const renewForm = document.getElementById('renew-form');
+        const reassignForm = document.getElementById('reassign-form');
+        const passwordForm = document.getElementById('password-form');
+        const cancelClientBtn = document.getElementById('cancel-client');
+        const cancelRenewBtn = document.getElementById('cancel-renew');
+        const cancelReassignBtn = document.getElementById('cancel-reassign');
+        const cancelPasswordBtn = document.getElementById('cancel-password');
+        const modalTitle = document.getElementById('modal-title');
+        const subscriptionSpace = document.getElementById('subscription-space');
+        const reassignNewSpace = document.getElementById('reassign-new-space');
+        
+        const spacesGrid = document.getElementById('spaces-grid');
+        
+        const totalClientsEl = document.getElementById('total-clients');
+        const activeSubscriptionsEl = document.getElementById('active-subscriptions');
+        const warningSubscriptionsEl = document.getElementById('warning-subscriptions');
+        const expiredSubscriptionsEl = document.getElementById('expired-subscriptions');
+        const monthlyIncomeEl = document.getElementById('monthly-income');
+        const occupiedPercentageEl = document.getElementById('occupied-percentage');
+        const totalSpacesEl = document.getElementById('total-spaces');
+        const availableSpacesEl = document.getElementById('available-spaces');
+        const occupiedSpacesEl = document.getElementById('occupied-spaces');
+        const maintenanceSpacesEl = document.getElementById('maintenance-spaces');
+        
+        const clientDashName = document.getElementById('client-dash-name');
+        const clientDashStatus = document.getElementById('client-dash-status');
+        const clientDashVehicle = document.getElementById('client-dash-vehicle');
+        const clientDashPlate = document.getElementById('client-dash-plate');
+        const clientDashSpace = document.getElementById('client-dash-space');
+        const clientDashExpiry = document.getElementById('client-dash-expiry');
+        const clientDashDays = document.getElementById('client-dash-days');
+        const clientDashAmount = document.getElementById('client-dash-amount');
+        const paymentHistory = document.getElementById('payment-history');
+        
+        const profileName = document.getElementById('profile-name');
+        const profileEmail = document.getElementById('profile-email');
+        const profilePhone = document.getElementById('profile-phone');
+        const profileAddress = document.getElementById('profile-address');
+        const adminProfileFields = document.getElementById('admin-profile-fields');
+        const clientProfileFields = document.getElementById('client-profile-fields');
+        const profileVehicle = document.getElementById('profile-vehicle');
+        const profilePlate = document.getElementById('profile-plate');
+        const profileRole = document.getElementById('profile-role');
+        
+        // Elementos del módulo de contabilidad
+        const currentMonthIncomeEl = document.getElementById('current-month-income');
+        const totalIncomeEl = document.getElementById('total-income');
+        const accountingActiveClientsEl = document.getElementById('accounting-active-clients');
+        const occupancyRateEl = document.getElementById('occupancy-rate');
+        const accountingYear = document.getElementById('accounting-year');
+        const accountingMonth = document.getElementById('accounting-month');
+        const accountingClient = document.getElementById('accounting-client');
+        const applyFiltersBtn = document.getElementById('apply-filters');
+        const incomeTableBody = document.getElementById('income-table-body');
+        const paymentsTableBody = document.getElementById('payments-table-body');
+
+        // ==================== FUNCIONES PRINCIPALES ====================
+
+        // Inicializar la aplicación
+        function init() {
+            // Event listeners
+            loginBtn.addEventListener('click', handleLogin);
+            logoutBtn.addEventListener('click', handleLogout);
+            resetDataBtn.addEventListener('click', resetAllData);
+            exportClientsBtn.addEventListener('click', exportClientsData);
+            addSpaceBtn.addEventListener('click', addNewSpace);
+            bulkMaintenanceBtn.addEventListener('click', toggleBulkMaintenance);
+            changePasswordBtn.addEventListener('click', openPasswordModal);
+            
+            // Navegación entre módulos
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const moduleId = link.getAttribute('data-module');
+                    switchModule(moduleId);
+                });
+            });
+            
+            // Gestión de clientes
+            addClientBtn.addEventListener('click', () => openClientModal());
+            cancelClientBtn.addEventListener('click', () => closeModal(clientModal));
+            cancelRenewBtn.addEventListener('click', () => closeModal(renewModal));
+            cancelReassignBtn.addEventListener('click', () => closeModal(reassignModal));
+            cancelPasswordBtn.addEventListener('click', () => closeModal(passwordModal));
+            
+            clientForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                saveClient();
+            });
+            
+            renewForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                renewSubscription();
+            });
+            
+            reassignForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                reassignSpace();
+            });
+            
+            passwordForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                changePassword();
+            });
+            
+            // Búsquedas
+            searchDashboard.addEventListener('input', () => {
+                renderClientsDashboard(searchDashboard.value);
+            });
+            
+            searchClients.addEventListener('input', () => {
+                renderClients(searchClients.value);
+            });
+            
+            // Contabilidad
+            applyFiltersBtn.addEventListener('click', loadAccountingData);
+            
+            // Cerrar modales al hacer clic fuera
+            window.addEventListener('click', (e) => {
+                if (e.target === clientModal) closeModal(clientModal);
+                if (e.target === renewModal) closeModal(renewModal);
+                if (e.target === reassignModal) closeModal(reassignModal);
+                if (e.target === passwordModal) closeModal(passwordModal);
+            });
+
+            // Establecer fecha actual como valor por defecto en los formularios
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('subscription-start').value = today;
+            document.getElementById('renew-start').value = today;
+            
+            // Cargar espacios disponibles en el select
+            loadAvailableSpaces();
+        }
+
+        // Función para cambiar entre módulos
+        function switchModule(moduleId) {
+            // Actualizar navegación activa
+            navLinks.forEach(nav => nav.classList.remove('active'));
+            document.querySelector(`[data-module="${moduleId}"]`).classList.add('active');
+            
+            // Mostrar módulo activo
+            modules.forEach(module => module.classList.remove('active'));
+            document.getElementById(moduleId).classList.add('active');
+            
+            // Cargar datos específicos del módulo
+            if (moduleId === 'accounting') {
+                loadAccountingData();
+            } else if (moduleId === 'spaces') {
+                renderSpaces();
+            }
+        }
+
+        // Función para mostrar notificaciones
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+
+        // Función para cerrar modales
+        function closeModal(modal) {
+            modal.style.display = 'none';
+        }
+
+        // Manejo de login - CORREGIDO
+        function handleLogin() {
+            const email = loginEmail.value.trim();
+            const password = loginPassword.value.trim();
+            
+            if (!email || !password) {
+                showNotification('Por favor, completa todos los campos', 'error');
+                return;
+            }
+            
+            // Recargar datos antes de verificar login
+            const currentData = initializeData();
+            users = currentData.users;
+            clients = currentData.clients;
+            spaces = currentData.spaces;
+            
+            // Buscar en usuarios (admin)
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                showApp();
+                return;
+            }
+            
+            // Buscar en clientes - CORREGIDO: usar comparación flexible
+            const clientUser = clients.find(c => {
+                return c.email === email && c.password === password;
+            });
+            
+            if (clientUser) {
+                currentUser = {
+                    id: clientUser.userId,
+                    name: clientUser.name,
+                    email: clientUser.email,
+                    password: clientUser.password,
+                    role: "client",
+                    phone: clientUser.phone,
+                    address: clientUser.address
+                };
+                showApp();
+                return;
+            }
+            
+            showNotification('Credenciales incorrectas. Verifica tu email y contraseña.', 'error');
+        }
+
+        // Manejo de logout
+        function handleLogout() {
+            currentUser = null;
+            loginEmail.value = '';
+            loginPassword.value = '';
+            loginScreen.style.display = 'block';
+            app.style.display = 'none';
+            showNotification('Sesión cerrada correctamente', 'success');
+        }
+
+        // Mostrar la aplicación después del login
+        function showApp() {
+            loginScreen.style.display = 'none';
+            app.style.display = 'block';
+            
+            // Actualizar información del usuario
+            userName.textContent = currentUser.name;
+            userRole.textContent = currentUser.role === 'admin' ? 'Administrador' : 'Cliente';
+            userRole.className = `user-role ${currentUser.role}`;
+            
+            // Mostrar/ocultar elementos según el rol
+            if (currentUser.role === 'admin') {
+                adminNav.style.display = 'block';
+                adminNav2.style.display = 'block';
+                adminNav3.style.display = 'block';
+                adminDashboard.style.display = 'block';
+                clientDashboard.style.display = 'none';
+                adminProfileFields.style.display = 'block';
+                clientProfileFields.style.display = 'none';
+                loadAdminData();
+            } else {
+                adminNav.style.display = 'none';
+                adminNav2.style.display = 'none';
+                adminNav3.style.display = 'none';
+                adminDashboard.style.display = 'none';
+                clientDashboard.style.display = 'block';
+                adminProfileFields.style.display = 'none';
+                clientProfileFields.style.display = 'block';
+                loadClientData();
+            }
+            
+            // Cargar datos del perfil
+            loadProfileData();
+            
+            // Forzar la visualización correcta del módulo dashboard
+            switchModule('dashboard');
+            
+            showNotification(`Bienvenido/a, ${currentUser.name}`, 'success');
+        }
+
+        // Cargar datos para el administrador
+        function loadAdminData() {
+            updateStats();
+            renderClientsDashboard();
+            renderClients();
+            renderSpaces();
+        }
+
+        // Cargar datos para el cliente - CORREGIDO
+        function loadClientData() {
+            // CORREGIDO: Usar comparación flexible para userId
+            const client = clients.find(c => c.userId == currentUser.id);
+            
+            if (client) {
+                // Actualizar dashboard del cliente
+                clientDashName.textContent = client.name;
+                clientDashVehicle.textContent = client.vehicle.model;
+                clientDashPlate.textContent = client.vehicle.plate;
+                clientDashSpace.textContent = client.subscription.space;
+                clientDashExpiry.textContent = formatDate(client.subscription.endDate);
+                clientDashAmount.textContent = `$${client.subscription.monthlyAmount}`;
+                
+                const daysUntilDue = calculateDaysUntilDue(client.subscription.endDate);
+                clientDashDays.textContent = daysUntilDue;
+                
+                // Actualizar estado
+                clientDashStatus.textContent = getStatusText(client.subscription.status);
+                clientDashStatus.className = `status ${client.subscription.status}`;
+                
+                // Cargar historial de pagos
+                renderPaymentHistory(client.paymentHistory);
+            } else {
+                // Si no se encuentra el cliente, mostrar mensaje de error
+                clientDashName.textContent = 'Información no disponible';
+                clientDashVehicle.textContent = '-';
+                clientDashPlate.textContent = '-';
+                clientDashSpace.textContent = '-';
+                clientDashExpiry.textContent = '-';
+                clientDashDays.textContent = '-';
+                clientDashAmount.textContent = '-';
+                clientDashStatus.textContent = 'Error';
+                clientDashStatus.className = 'status expired';
+                
+                paymentHistory.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error al cargar la información</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Cargar datos del perfil - CORREGIDO
+        function loadProfileData() {
+            profileName.value = currentUser.name;
+            profileEmail.value = currentUser.email;
+            profilePhone.value = currentUser.phone || '';
+            profileAddress.value = currentUser.address || '';
+            profileRole.value = currentUser.role === 'admin' ? 'Administrador' : 'Cliente';
+            
+            if (currentUser.role === 'client') {
+                // CORREGIDO: Usar comparación flexible para userId
+                const client = clients.find(c => c.userId == currentUser.id);
+                if (client) {
+                    profileVehicle.value = client.vehicle.model;
+                    profilePlate.value = client.vehicle.plate;
+                }
+            } else {
+                clientProfileFields.style.display = 'none';
+            }
+        }
+
+        // Actualizar estadísticas
+        function updateStats() {
+            const total = clients.length;
+            const active = clients.filter(client => client.subscription.status === 'active').length;
+            const warning = clients.filter(client => client.subscription.status === 'warning').length;
+            const expired = clients.filter(client => client.subscription.status === 'expired').length;
+            
+            // Calcular ingresos mensuales
+            const monthlyIncome = calculateMonthlyIncome();
+            
+            // Calcular porcentaje de ocupación
+            const totalSpacesCount = spaces.length;
+            const occupiedSpacesCount = spaces.filter(space => space.status === 'occupied').length;
+            const occupiedPercentage = totalSpacesCount > 0 ? Math.round((occupiedSpacesCount / totalSpacesCount) * 100) : 0;
+            
+            totalClientsEl.textContent = total;
+            activeSubscriptionsEl.textContent = active;
+            warningSubscriptionsEl.textContent = warning;
+            expiredSubscriptionsEl.textContent = expired;
+            monthlyIncomeEl.textContent = `$${monthlyIncome.toFixed(2)}`;
+            occupiedPercentageEl.textContent = `${occupiedPercentage}%`;
+            
+            // Estadísticas de espacios
+            const totalSpaces = spaces.length;
+            const availableSpaces = spaces.filter(space => space.status === 'available').length;
+            const occupiedSpaces = spaces.filter(space => space.status === 'occupied').length;
+            const maintenanceSpaces = spaces.filter(space => space.maintenance).length;
+            
+            totalSpacesEl.textContent = totalSpaces;
+            availableSpacesEl.textContent = availableSpaces;
+            occupiedSpacesEl.textContent = occupiedSpaces;
+            maintenanceSpacesEl.textContent = maintenanceSpaces;
+        }
+
+        // Calcular ingresos mensuales
+        function calculateMonthlyIncome() {
+            const currentDate = new Date();
+            const currentMonth = currentDate.getMonth() + 1;
+            const currentYear = currentDate.getFullYear();
+            
+            let monthlyIncome = 0;
+            
+            clients.forEach(client => {
+                // Solo considerar clientes activos
+                if (client.subscription.status === 'active') {
+                    // Verificar si la suscripción está activa en el mes actual
+                    const subscriptionStart = new Date(client.subscription.startDate);
+                    const subscriptionEnd = new Date(client.subscription.endDate);
+                    
+                    if (subscriptionStart.getMonth() + 1 <= currentMonth && 
+                        subscriptionStart.getFullYear() <= currentYear &&
+                        subscriptionEnd.getMonth() + 1 >= currentMonth && 
+                        subscriptionEnd.getFullYear() >= currentYear) {
+                        monthlyIncome += client.subscription.monthlyAmount;
+                    }
+                }
+            });
+            
+            return monthlyIncome;
+        }
+
+        // Cargar datos de contabilidad
+        function loadAccountingData() {
+            const selectedYear = accountingYear.value;
+            const selectedMonth = accountingMonth.value;
+            const selectedClient = accountingClient.value;
+            
+            // Actualizar estadísticas de contabilidad
+            updateAccountingStats();
+            
+            // Cargar años disponibles
+            loadAccountingYears();
+            
+            // Cargar clientes en el filtro
+            loadAccountingClients();
+            
+            // Generar reporte de ingresos
+            generateIncomeReport(selectedYear, selectedMonth, selectedClient);
+            
+            // Generar historial de pagos
+            generatePaymentsHistory(selectedYear, selectedMonth, selectedClient);
+        }
+
+        // Actualizar estadísticas de contabilidad
+        function updateAccountingStats() {
+            const currentMonthIncome = calculateMonthlyIncome();
+            const totalIncome = calculateTotalIncome();
+            const activeClients = clients.filter(client => client.subscription.status === 'active').length;
+            
+            // Calcular tasa de ocupación
+            const totalSpacesCount = spaces.length;
+            const occupiedSpacesCount = spaces.filter(space => space.status === 'occupied').length;
+            const occupancyRate = totalSpacesCount > 0 ? Math.round((occupiedSpacesCount / totalSpacesCount) * 100) : 0;
+            
+            currentMonthIncomeEl.textContent = `$${currentMonthIncome.toFixed(2)}`;
+            totalIncomeEl.textContent = `$${totalIncome.toFixed(2)}`;
+            accountingActiveClientsEl.textContent = activeClients;
+            occupancyRateEl.textContent = `${occupancyRate}%`;
+        }
+
+        // Calcular ingresos totales
+        function calculateTotalIncome() {
+            let totalIncome = 0;
+            
+            clients.forEach(client => {
+                client.paymentHistory.forEach(payment => {
+                    totalIncome += payment.amount;
+                });
+            });
+            
+            return totalIncome;
+        }
+
+        // Cargar años disponibles para filtros
+        function loadAccountingYears() {
+            // Obtener años únicos de los pagos
+            const years = new Set();
+            const currentYear = new Date().getFullYear();
+            
+            // Agregar años desde 2020 hasta el actual
+            for (let year = 2020; year <= currentYear; year++) {
+                years.add(year);
+            }
+            
+            // Agregar años de las suscripciones
+            clients.forEach(client => {
+                const startYear = new Date(client.subscription.startDate).getFullYear();
+                const endYear = new Date(client.subscription.endDate).getFullYear();
+                
+                years.add(startYear);
+                years.add(endYear);
+            });
+            
+            // Ordenar años y agregar al select
+            accountingYear.innerHTML = '<option value="all">Todos los años</option>';
+            const sortedYears = Array.from(years).sort((a, b) => b - a);
+            
+            sortedYears.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                accountingYear.appendChild(option);
+            });
+            
+            // Establecer el año actual como seleccionado
+            accountingYear.value = currentYear;
+        }
+
+        // Cargar clientes en el filtro
+        function loadAccountingClients() {
+            accountingClient.innerHTML = '<option value="all">Todos los clientes</option>';
+            
+            clients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id;
+                option.textContent = client.name;
+                accountingClient.appendChild(option);
+            });
+        }
+
+        // Generar reporte de ingresos
+        function generateIncomeReport(year, month, clientId) {
+            incomeTableBody.innerHTML = '';
+            
+            // Obtener datos agrupados por mes
+            const incomeByMonth = {};
+            
+            clients.forEach(client => {
+                // Si se filtró por cliente específico, saltar otros clientes
+                if (clientId !== 'all' && client.id != clientId) {
+                    return;
+                }
+                
+                client.paymentHistory.forEach(payment => {
+                    const paymentDate = new Date(payment.date);
+                    const paymentYear = paymentDate.getFullYear();
+                    const paymentMonth = paymentDate.getMonth() + 1;
+                    
+                    // Si se filtró por año específico, saltar otros años
+                    if (year !== 'all' && paymentYear != year) {
+                        return;
+                    }
+                    
+                    // Si se filtró por mes específico, saltar otros meses
+                    if (month !== 'all' && paymentMonth != month) {
+                        return;
+                    }
+                    
+                    const key = `${paymentYear}-${paymentMonth.toString().padStart(2, '0')}`;
+                    
+                    if (!incomeByMonth[key]) {
+                        incomeByMonth[key] = {
+                            year: paymentYear,
+                            month: paymentMonth,
+                            income: 0,
+                            clients: new Set(),
+                            occupiedSpaces: 0
+                        };
+                    }
+                    
+                    incomeByMonth[key].income += payment.amount;
+                    incomeByMonth[key].clients.add(client.id);
+                });
+            });
+            
+            // Calcular espacios ocupados por mes
+            Object.keys(incomeByMonth).forEach(key => {
+                const data = incomeByMonth[key];
+                const targetDate = new Date(data.year, data.month - 1, 15); // Día 15 del mes
+                
+                data.occupiedSpaces = clients.filter(client => {
+                    const startDate = new Date(client.subscription.startDate);
+                    const endDate = new Date(client.subscription.endDate);
+                    
+                    return startDate <= targetDate && endDate >= targetDate;
+                }).length;
+                
+                // Calcular tasa de ocupación
+                data.occupancyRate = spaces.length > 0 ? Math.round((data.occupiedSpaces / spaces.length) * 100) : 0;
+            });
+            
+            // Ordenar por año y mes (más reciente primero)
+            const sortedMonths = Object.values(incomeByMonth).sort((a, b) => {
+                if (a.year !== b.year) return b.year - a.year;
+                return b.month - a.month;
+            });
+            
+            // Llenar la tabla
+            if (sortedMonths.length === 0) {
+                incomeTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <i class="fas fa-chart-line"></i>
+                            <p>No hay datos de ingresos para los filtros seleccionados</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            sortedMonths.forEach(data => {
+                const monthName = getMonthName(data.month);
+                const activeClients = data.clients.size;
+                const avgPerClient = activeClients > 0 ? data.income / activeClients : 0;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${monthName} ${data.year}</td>
+                    <td>${activeClients}</td>
+                    <td class="income-positive">$${data.income.toFixed(2)}</td>
+                    <td>$${avgPerClient.toFixed(2)}</td>
+                    <td>${data.occupiedSpaces}</td>
+                    <td>${data.occupancyRate}%</td>
+                `;
+                
+                incomeTableBody.appendChild(row);
+            });
+        }
+
+        // Generar historial de pagos
+        function generatePaymentsHistory(year, month, clientId) {
+            paymentsTableBody.innerHTML = '';
+            
+            // Recolectar todos los pagos
+            const allPayments = [];
+            
+            clients.forEach(client => {
+                // Si se filtró por cliente específico, saltar otros clientes
+                if (clientId !== 'all' && client.id != clientId) {
+                    return;
+                }
+                
+                client.paymentHistory.forEach(payment => {
+                    const paymentDate = new Date(payment.date);
+                    const paymentYear = paymentDate.getFullYear();
+                    const paymentMonth = paymentDate.getMonth() + 1;
+                    
+                    // Si se filtró por año específico, saltar otros años
+                    if (year !== 'all' && paymentYear != year) {
+                        return;
+                    }
+                    
+                    // Si se filtró por mes específico, saltar otros meses
+                    if (month !== 'all' && paymentMonth != month) {
+                        return;
+                    }
+                    
+                    allPayments.push({
+                        date: payment.date,
+                        clientName: client.name,
+                        concept: payment.method,
+                        amount: payment.amount,
+                        method: payment.method,
+                        status: 'Completado'
+                    });
+                });
+            });
+            
+            // Ordenar por fecha (más reciente primero)
+            allPayments.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // Llenar la tabla
+            if (allPayments.length === 0) {
+                paymentsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <i class="fas fa-receipt"></i>
+                            <p>No hay pagos para los filtros seleccionados</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            allPayments.forEach(payment => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formatDate(payment.date)}</td>
+                    <td>${payment.clientName}</td>
+                    <td>${payment.concept}</td>
+                    <td class="income-positive">$${payment.amount.toFixed(2)}</td>
+                    <td>${payment.method}</td>
+                    <td><span class="status active">${payment.status}</span></td>
+                `;
+                
+                paymentsTableBody.appendChild(row);
+            });
+        }
+
+        // Obtener nombre del mes
+        function getMonthName(monthNumber) {
+            const months = [
+                'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+            ];
+            return months[monthNumber - 1];
+        }
+
+        // Renderizar clientes en el dashboard
+        function renderClientsDashboard(searchTerm = '') {
+            clientsListDashboard.innerHTML = '';
+            
+            const filteredClients = clients.filter(client => 
+                client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                client.vehicle.plate.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            
+            if (filteredClients.length === 0) {
+                clientsListDashboard.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <p>No se encontraron clientes</p>
+                        <p><small>Usa el botón "Agregar Cliente" para comenzar</small></p>
+                    </div>
+                `;
+                return;
+            }
+            
+            filteredClients.forEach(client => {
+                const clientCard = document.createElement('div');
+                clientCard.className = `client-card ${client.subscription.status}`;
+                
+                const daysUntilDue = calculateDaysUntilDue(client.subscription.endDate);
+                
+                clientCard.innerHTML = `
+                    <div class="card-header">
+                        <div class="client-name">${client.name}</div>
+                        <div class="status ${client.subscription.status}">${getStatusText(client.subscription.status)}</div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Email:</span> ${client.email}
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Vehículo:</span> ${client.vehicle.model}
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Placa:</span> ${client.vehicle.plate}
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Espacio:</span> ${client.subscription.space}
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Vence:</span> ${formatDate(client.subscription.endDate)}
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Días:</span> ${daysUntilDue}
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn btn-primary" onclick="editClient(${client.id})">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn btn-warning" onclick="renewSubscriptionModal(${client.id})">
+                            <i class="fas fa-sync-alt"></i> Renovar
+                        </button>
+                        <button class="btn btn-info" onclick="reassignSpaceModal(${client.id})">
+                            <i class="fas fa-exchange-alt"></i> Reasignar
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteClient(${client.id})">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </div>
+                `;
+                
+                clientsListDashboard.appendChild(clientCard);
+            });
+        }
+
+        // Renderizar clientes en gestión
+        function renderClients(searchTerm = '') {
+            clientsList.innerHTML = '';
+            
+            const filteredClients = clients.filter(client => 
+                client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                client.vehicle.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                client.email.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            
+            if (filteredClients.length === 0) {
+                clientsList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <p>No se encontraron clientes</p>
+                        <p><small>Usa el botón "Agregar Cliente" para comenzar</small></p>
+                    </div>
+                `;
+                return;
+            }
+            
+            filteredClients.forEach(client => {
+                const clientCard = document.createElement('div');
+                clientCard.className = `client-card ${client.subscription.status}`;
+                
+                const daysUntilDue = calculateDaysUntilDue(client.subscription.endDate);
+                
+                clientCard.innerHTML = `
+                    <div class="card-header">
+                        <div class="client-name">${client.name}</div>
+                        <div class="status ${client.subscription.status}">${getStatusText(client.subscription.status)}</div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Email:</span> ${client.email}
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Teléfono:</span> ${client.phone}
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Vehículo:</span> ${client.vehicle.model}
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Placa:</span> ${client.vehicle.plate}
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Espacio:</span> ${client.subscription.space}
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Vence:</span> ${formatDate(client.subscription.endDate)}
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn btn-primary" onclick="editClient(${client.id})">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn btn-warning" onclick="renewSubscriptionModal(${client.id})">
+                            <i class="fas fa-sync-alt"></i> Renovar
+                        </button>
+                        <button class="btn btn-info" onclick="reassignSpaceModal(${client.id})">
+                            <i class="fas fa-exchange-alt"></i> Reasignar
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteClient(${client.id})">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </div>
+                `;
+                
+                clientsList.appendChild(clientCard);
+            });
+        }
+
+        // Función para eliminar cliente
+        function deleteClient(clientId) {
+            const client = clients.find(c => c.id === clientId);
+            
+            if (!client) {
+                showNotification('Cliente no encontrado', 'error');
+                return;
+            }
+            
+            if (confirm(`¿Estás seguro de que quieres eliminar al cliente ${client.name}? Esta acción no se puede deshacer.`)) {
+                // Liberar el espacio asignado
+                const space = spaces.find(s => s.id === client.subscription.space);
+                if (space) {
+                    space.status = 'available';
+                    delete space.clientId;
+                }
+                
+                // Eliminar el cliente
+                clients = clients.filter(c => c.id !== clientId);
+                
+                // Guardar en LocalStorage
+                saveToLocalStorage('parkingClients', clients);
+                saveToLocalStorage('parkingSpaces', spaces);
+                
+                // Actualizar la interfaz
+                updateStats();
+                renderClientsDashboard();
+                renderClients();
+                renderSpaces();
+                
+                showNotification(`Cliente ${client.name} eliminado exitosamente`, 'success');
+            }
+        }
+
+        // Renderizar espacios
+        function renderSpaces() {
+            spacesGrid.innerHTML = '';
+            
+            spaces.forEach(space => {
+                const spaceItem = document.createElement('div');
+                
+                // Determinar clase según estado
+                let statusClass = space.status;
+                if (space.maintenance) {
+                    statusClass = 'maintenance';
+                }
+                
+                spaceItem.className = `space-item ${statusClass}`;
+                
+                let clientInfo = '';
+                let spaceActions = '';
+                
+                if (space.status === 'occupied') {
+                    const client = clients.find(c => c.id === space.clientId);
+                    clientInfo = client ? `<div class="space-info">${client.name}</div>` : '';
+                    
+                    spaceActions = `
+                        <div class="space-actions">
+                            <button class="btn btn-info btn-sm" onclick="reassignSpaceModalFromSpace('${space.id}')">
+                                <i class="fas fa-exchange-alt"></i>
+                            </button>
+                            <button class="btn btn-warning btn-sm" onclick="toggleMaintenance('${space.id}')">
+                                <i class="fas fa-tools"></i>
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    spaceActions = `
+                        <div class="space-actions">
+                            <button class="btn btn-success btn-sm" onclick="assignToClient('${space.id}')">
+                                <i class="fas fa-user-plus"></i>
+                            </button>
+                            <button class="btn btn-warning btn-sm" onclick="toggleMaintenance('${space.id}')">
+                                <i class="fas fa-tools"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+                
+                spaceItem.innerHTML = `
+                    <div class="space-number">${space.id}</div>
+                    <div class="status ${statusClass}">
+                        ${space.maintenance ? 'Mantenimiento' : (space.status === 'available' ? 'Disponible' : 'Ocupado')}
+                    </div>
+                    ${clientInfo}
+                    ${spaceActions}
+                `;
+                
+                spacesGrid.appendChild(spaceItem);
+            });
+        }
+
+        // Asignar espacio a cliente
+        function assignToClient(spaceId) {
+            // Buscar cliente sin espacio asignado
+            const clientWithoutSpace = clients.find(client => !client.subscription.space);
+            
+            if (clientWithoutSpace) {
+                if (confirm(`¿Asignar espacio ${spaceId} a ${clientWithoutSpace.name}?`)) {
+                    // Actualizar espacio
+                    const space = spaces.find(s => s.id === spaceId);
+                    if (space) {
+                        space.status = 'occupied';
+                        space.clientId = clientWithoutSpace.id;
+                    }
+                    
+                    // Actualizar cliente
+                    clientWithoutSpace.subscription.space = spaceId;
+                    
+                    // Guardar cambios
+                    saveToLocalStorage('parkingClients', clients);
+                    saveToLocalStorage('parkingSpaces', spaces);
+                    
+                    // Actualizar interfaz
+                    renderSpaces();
+                    updateStats();
+                    
+                    showNotification(`Espacio ${spaceId} asignado a ${clientWithoutSpace.name}`, 'success');
+                }
+            } else {
+                showNotification('No hay clientes sin espacio asignado', 'warning');
+            }
+        }
+
+        // Alternar estado de mantenimiento
+        function toggleMaintenance(spaceId) {
+            const space = spaces.find(s => s.id === spaceId);
+            if (space) {
+                space.maintenance = !space.maintenance;
+                
+                // Si se pone en mantenimiento, liberar el espacio
+                if (space.maintenance && space.status === 'occupied') {
+                    const client = clients.find(c => c.id === space.clientId);
+                    if (client) {
+                        client.subscription.space = '';
+                    }
+                    space.status = 'available';
+                    delete space.clientId;
+                }
+                
+                saveToLocalStorage('parkingSpaces', spaces);
+                renderSpaces();
+                updateStats();
+                
+                showNotification(`Espacio ${spaceId} ${space.maintenance ? 'en mantenimiento' : 'disponible'}`, 'success');
+            }
+        }
+
+        // Renderizar historial de pagos
+        function renderPaymentHistory(payments) {
+            paymentHistory.innerHTML = '';
+            
+            if (payments.length === 0) {
+                paymentHistory.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-receipt"></i>
+                        <p>No hay historial de pagos</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            payments.forEach(payment => {
+                const paymentItem = document.createElement('div');
+                paymentItem.className = 'client-card';
+                paymentItem.innerHTML = `
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Fecha:</span> ${formatDate(payment.date)}
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Monto:</span> $${payment.amount}
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Método:</span> ${payment.method}
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Concepto:</span> ${payment.method}
+                        </div>
+                    </div>
+                `;
+                paymentHistory.appendChild(paymentItem);
+            });
+        }
+
+        // Abrir modal para agregar/editar cliente
+        function openClientModal(clientId = null) {
+            currentEditingClient = clientId;
+            
+            if (clientId) {
+                // Modo edición
+                modalTitle.innerHTML = '<i class="fas fa-user-edit"></i> Editar Cliente';
+                const client = clients.find(c => c.id === clientId);
+                
+                document.getElementById('client-name').value = client.name;
+                document.getElementById('client-email').value = client.email;
+                document.getElementById('client-password').value = client.password;
+                document.getElementById('client-phone').value = client.phone;
+                document.getElementById('client-address').value = client.address;
+                document.getElementById('vehicle-plate').value = client.vehicle.plate;
+                document.getElementById('vehicle-model').value = client.vehicle.model;
+                document.getElementById('subscription-space').value = client.subscription.space;
+                document.getElementById('subscription-start').value = client.subscription.startDate;
+                document.getElementById('subscription-duration').value = getDurationInMonths(client.subscription.startDate, client.subscription.endDate);
+                document.getElementById('subscription-amount').value = client.subscription.monthlyAmount;
+            } else {
+                // Modo agregar
+                modalTitle.innerHTML = '<i class="fas fa-user-plus"></i> Agregar Cliente';
+                clientForm.reset();
+                
+                // Establecer valores por defecto
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('subscription-start').value = today;
+                document.getElementById('subscription-amount').value = 120;
+                // Generar contraseña aleatoria por defecto
+                document.getElementById('client-password').value = generateRandomPassword();
+            }
+            
+            // Cargar espacios disponibles
+            loadAvailableSpaces();
+            
+            clientModal.style.display = 'block';
+        }
+
+        // Abrir modal para reasignar espacio
+        function reassignSpaceModal(clientId) {
+            currentReassigningClient = clientId;
+            const client = clients.find(c => c.id === clientId);
+            
+            document.getElementById('reassign-client').value = client.name;
+            document.getElementById('reassign-current-space').value = client.subscription.space;
+            
+            // Cargar espacios disponibles
+            reassignNewSpace.innerHTML = '<option value="">Seleccionar nuevo espacio</option>';
+            spaces.forEach(space => {
+                if (space.status === 'available' && !space.maintenance) {
+                    const option = document.createElement('option');
+                    option.value = space.id;
+                    option.textContent = space.id;
+                    reassignNewSpace.appendChild(option);
+                }
+            });
+            
+            reassignModal.style.display = 'block';
+        }
+
+        // Abrir modal para reasignar espacio desde el espacio
+        function reassignSpaceModalFromSpace(spaceId) {
+            const space = spaces.find(s => s.id === spaceId);
+            if (space && space.status === 'occupied') {
+                const client = clients.find(c => c.id === space.clientId);
+                if (client) {
+                    reassignSpaceModal(client.id);
+                }
+            }
+        }
+
+        // Abrir modal para cambiar contraseña
+        function openPasswordModal() {
+            passwordModal.style.display = 'block';
+        }
+
+        // Generar contraseña aleatoria
+        function generateRandomPassword() {
+            const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let password = '';
+            for (let i = 0; i < 8; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return password;
+        }
+
+        // Cargar espacios disponibles en el select
+        function loadAvailableSpaces() {
+            subscriptionSpace.innerHTML = '<option value="">Seleccionar espacio</option>';
+            
+            spaces.forEach(space => {
+                if (space.status === 'available' && !space.maintenance) {
+                    const option = document.createElement('option');
+                    option.value = space.id;
+                    option.textContent = space.id;
+                    subscriptionSpace.appendChild(option);
+                }
+            });
+        }
+
+        // Guardar cliente (agregar o editar)
+        function saveClient() {
+            const name = document.getElementById('client-name').value;
+            const email = document.getElementById('client-email').value;
+            const password = document.getElementById('client-password').value;
+            const phone = document.getElementById('client-phone').value;
+            const address = document.getElementById('client-address').value;
+            const plate = document.getElementById('vehicle-plate').value;
+            const model = document.getElementById('vehicle-model').value;
+            const space = document.getElementById('subscription-space').value;
+            const startDate = document.getElementById('subscription-start').value;
+            const duration = parseInt(document.getElementById('subscription-duration').value);
+            const amount = parseFloat(document.getElementById('subscription-amount').value);
+            
+            // Validar contraseña
+            if (password.length < 6) {
+                showNotification('La contraseña debe tener al menos 6 caracteres', 'error');
+                return;
+            }
+            
+            // Verificar si el email ya existe (solo en modo agregar)
+            if (!currentEditingClient) {
+                const emailExists = users.some(u => u.email === email) || clients.some(c => c.email === email);
+                if (emailExists) {
+                    showNotification('Ya existe un usuario con ese email', 'error');
+                    return;
+                }
+            }
+            
+            // Calcular fecha de fin
+            const endDate = new Date(startDate);
+            endDate.setMonth(endDate.getMonth() + duration);
+            const endDateStr = endDate.toISOString().split('T')[0];
+            
+            // Calcular estado
+            const status = calculateSubscriptionStatus(endDateStr);
+            
+            if (currentEditingClient) {
+                // Editar cliente existente
+                const index = clients.findIndex(c => c.id === currentEditingClient);
+                const oldSpace = clients[index].subscription.space;
+                
+                clients[index] = {
+                    ...clients[index],
+                    name,
+                    email,
+                    password,
+                    phone,
+                    address,
+                    vehicle: {
+                        plate,
+                        model
+                    },
+                    subscription: {
+                        ...clients[index].subscription,
+                        space,
+                        startDate,
+                        endDate: endDateStr,
+                        status,
+                        monthlyAmount: amount
+                    }
+                };
+                
+                // Actualizar espacio
+                updateSpaceAssignment(oldSpace, space, currentEditingClient);
+            } else {
+                // Agregar nuevo cliente
+                const newClientId = clients.length > 0 ? Math.max(...clients.map(c => c.id)) + 1 : 1;
+                const newUserId = Math.max(...users.map(u => u.id), ...clients.map(c => c.userId)) + 1;
+                
+                const newClient = {
+                    id: newClientId,
+                    userId: newUserId,
+                    name,
+                    email,
+                    password,
+                    phone,
+                    address,
+                    vehicle: {
+                        plate,
+                        model
+                    },
+                    subscription: {
+                        id: clients.length > 0 ? Math.max(...clients.map(c => c.subscription.id)) + 1 : 1,
+                        space,
+                        startDate,
+                        endDate: endDateStr,
+                        status,
+                        monthlyAmount: amount
+                    },
+                    paymentHistory: [
+                        { date: startDate, amount, method: "Pago inicial" }
+                    ]
+                };
+                clients.push(newClient);
+                
+                // Actualizar espacio
+                updateSpaceAssignment(null, space, newClient.id);
+            }
+            
+            // GUARDAR EN LOCALSTORAGE
+            saveToLocalStorage('parkingClients', clients);
+            saveToLocalStorage('parkingSpaces', spaces);
+            
+            updateStats();
+            renderClientsDashboard();
+            renderClients();
+            renderSpaces();
+            closeModal(clientModal);
+            
+            showNotification(`Cliente ${currentEditingClient ? 'actualizado' : 'agregado'} exitosamente`, 'success');
+        }
+
+        // Actualizar asignación de espacio
+        function updateSpaceAssignment(oldSpace, newSpace, clientId) {
+            // Liberar espacio anterior si existe
+            if (oldSpace) {
+                const oldSpaceObj = spaces.find(s => s.id === oldSpace);
+                if (oldSpaceObj) {
+                    oldSpaceObj.status = 'available';
+                    delete oldSpaceObj.clientId;
+                }
+            }
+            
+            // Ocupar nuevo espacio
+            const newSpaceObj = spaces.find(s => s.id === newSpace);
+            if (newSpaceObj) {
+                newSpaceObj.status = 'occupied';
+                newSpaceObj.clientId = clientId;
+            }
+        }
+
+        // Reasignar espacio
+        function reassignSpace() {
+            const client = clients.find(c => c.id === currentReassigningClient);
+            const newSpace = document.getElementById('reassign-new-space').value;
+            const reason = document.getElementById('reassign-reason').value;
+            
+            if (!newSpace) {
+                showNotification('Selecciona un nuevo espacio', 'error');
+                return;
+            }
+            
+            const oldSpace = client.subscription.space;
+            
+            // Actualizar espacio anterior
+            const oldSpaceObj = spaces.find(s => s.id === oldSpace);
+            if (oldSpaceObj) {
+                oldSpaceObj.status = 'available';
+                delete oldSpaceObj.clientId;
+            }
+            
+            // Actualizar nuevo espacio
+            const newSpaceObj = spaces.find(s => s.id === newSpace);
+            if (newSpaceObj) {
+                newSpaceObj.status = 'occupied';
+                newSpaceObj.clientId = client.id;
+            }
+            
+            // Actualizar cliente
+            client.subscription.space = newSpace;
+            
+            // Agregar nota de reasignación al historial
+            if (reason) {
+                client.paymentHistory.unshift({
+                    date: new Date().toISOString().split('T')[0],
+                    amount: 0,
+                    method: `Reasignación: ${reason}`
+                });
+            }
+            
+            // Guardar cambios
+            saveToLocalStorage('parkingClients', clients);
+            saveToLocalStorage('parkingSpaces', spaces);
+            
+            // Actualizar interfaz
+            updateStats();
+            renderClientsDashboard();
+            renderClients();
+            renderSpaces();
+            closeModal(reassignModal);
+            
+            showNotification(`Espacio reasignado de ${oldSpace} a ${newSpace} para ${client.name}`, 'success');
+        }
+
+        // Cambiar contraseña
+        function changePassword() {
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            if (currentPassword !== currentUser.password) {
+                showNotification('La contraseña actual es incorrecta', 'error');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                showNotification('La nueva contraseña debe tener al menos 6 caracteres', 'error');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showNotification('Las contraseñas nuevas no coinciden', 'error');
+                return;
+            }
+            
+            // Actualizar contraseña
+            currentUser.password = newPassword;
+            
+            // Actualizar en el almacenamiento
+            if (currentUser.role === 'admin') {
+                const userIndex = users.findIndex(u => u.id === currentUser.id);
+                if (userIndex !== -1) {
+                    users[userIndex].password = newPassword;
+                    saveToLocalStorage('parkingUsers', users);
+                }
+            } else {
+                const clientIndex = clients.findIndex(c => c.userId == currentUser.id);
+                if (clientIndex !== -1) {
+                    clients[clientIndex].password = newPassword;
+                    saveToLocalStorage('parkingClients', clients);
+                }
+            }
+            
+            closeModal(passwordModal);
+            passwordForm.reset();
+            
+            showNotification('Contraseña cambiada exitosamente', 'success');
+        }
+
+        // Editar cliente
+        function editClient(clientId) {
+            openClientModal(clientId);
+        }
+
+        // Abrir modal para renovar suscripción
+        function renewSubscriptionModal(clientId) {
+            currentRenewingClient = clientId;
+            const client = clients.find(c => c.id === clientId);
+            
+            document.getElementById('renew-client').value = client.name;
+            document.getElementById('renew-start').value = new Date().toISOString().split('T')[0];
+            document.getElementById('renew-amount').value = client.subscription.monthlyAmount;
+            
+            renewModal.style.display = 'block';
+        }
+
+        // Renovar suscripción
+        function renewSubscription() {
+            const client = clients.find(c => c.id === currentRenewingClient);
+            const startDate = document.getElementById('renew-start').value;
+            const duration = parseInt(document.getElementById('renew-duration').value);
+            const amount = parseFloat(document.getElementById('renew-amount').value);
+            
+            // Calcular fecha de fin
+            const endDate = new Date(startDate);
+            endDate.setMonth(endDate.getMonth() + duration);
+            const endDateStr = endDate.toISOString().split('T')[0];
+            
+            // Actualizar suscripción
+            client.subscription.startDate = startDate;
+            client.subscription.endDate = endDateStr;
+            client.subscription.status = 'active';
+            client.subscription.monthlyAmount = amount;
+            
+            // Agregar al historial de pagos
+            client.paymentHistory.unshift({
+                date: startDate,
+                amount,
+                method: "Renovación"
+            });
+            
+            // GUARDAR EN LOCALSTORAGE
+            saveToLocalStorage('parkingClients', clients);
+            
+            updateStats();
+            renderClientsDashboard();
+            renderClients();
+            if (currentUser.role === 'client' && client.userId === currentUser.id) {
+                loadClientData();
+            }
+            closeModal(renewModal);
+            
+            showNotification(`Suscripción renovada exitosamente para ${client.name}`, 'success');
+        }
+
+        // Exportar datos de clientes
+        function exportClientsData() {
+            const dataStr = JSON.stringify(clients, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `clientes_parkmaster_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            showNotification('Datos de clientes exportados correctamente', 'success');
+        }
+
+        // Agregar nuevo espacio
+        function addNewSpace() {
+            const newId = prompt('Ingresa el ID del nuevo espacio (ej: D-01):');
+            if (newId) {
+                // Verificar si el espacio ya existe
+                if (spaces.some(space => space.id === newId)) {
+                    showNotification('El espacio ya existe', 'error');
+                    return;
+                }
+                
+                spaces.push({
+                    id: newId,
+                    status: "available",
+                    type: "standard",
+                    maintenance: false
+                });
+                
+                saveToLocalStorage('parkingSpaces', spaces);
+                renderSpaces();
+                updateStats();
+                
+                showNotification(`Espacio ${newId} agregado correctamente`, 'success');
+            }
+        }
+
+        // Alternar mantenimiento masivo
+        function toggleBulkMaintenance() {
+            const section = prompt('Ingresa la sección para mantenimiento (A, B, C, o ALL para todos):').toUpperCase();
+            if (section && ['A', 'B', 'C', 'ALL'].includes(section)) {
+                const confirmAction = confirm(`¿Poner en mantenimiento todos los espacios de la sección ${section}?`);
+                if (confirmAction) {
+                    spaces.forEach(space => {
+                        if (section === 'ALL' || space.id.startsWith(section)) {
+                            space.maintenance = true;
+                            if (space.status === 'occupied') {
+                                const client = clients.find(c => c.id === space.clientId);
+                                if (client) {
+                                    client.subscription.space = '';
+                                }
+                                space.status = 'available';
+                                delete space.clientId;
+                            }
+                        }
+                    });
+                    
+                    saveToLocalStorage('parkingSpaces', spaces);
+                    renderSpaces();
+                    updateStats();
+                    
+                    showNotification(`Mantenimiento aplicado a la sección ${section}`, 'success');
+                }
+            }
+        }
+
+        // Calcular estado de suscripción
+        function calculateSubscriptionStatus(endDate) {
+            const today = new Date();
+            const dueDate = new Date(endDate);
+            const diffTime = dueDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 0) {
+                return 'expired';
+            } else if (diffDays <= 7) {
+                return 'warning';
+            } else {
+                return 'active';
+            }
+        }
+
+        // Calcular días hasta el vencimiento
+        function calculateDaysUntilDue(endDate) {
+            const today = new Date();
+            const dueDate = new Date(endDate);
+            const diffTime = dueDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            return diffDays;
+        }
+
+        // Obtener texto del estado
+        function getStatusText(status) {
+            switch(status) {
+                case 'active': return 'Activa';
+                case 'warning': return 'Por Vencer';
+                case 'expired': return 'Vencida';
+                default: return 'Desconocido';
+            }
+        }
+
+        // Obtener duración en meses entre dos fechas
+        function getDurationInMonths(startDate, endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+        }
+
+        // Formatear fecha
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('es-ES', options);
+        }
+
+        // Inicializar la aplicación cuando se carga la página
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

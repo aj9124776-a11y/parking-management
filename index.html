@@ -1,0 +1,2720 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParkMaster - Gestión de Estacionamiento</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --admin-color: #9b59b6;
+            --client-color: #1abc9c;
+            --accounting-color: #16a085;
+            --info-color: #2980b9;
+            --sales-color: #e67e22;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header y Navegación */
+        header {
+            background: linear-gradient(135deg, var(--dark-color) 0%, #34495e 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo i {
+            color: var(--primary-color);
+        }
+        
+        .logo span {
+            color: var(--primary-color);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-role {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .user-role.admin {
+            background-color: var(--admin-color);
+        }
+        
+        .user-role.client {
+            background-color: var(--client-color);
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        
+        nav ul li {
+            margin-left: 20px;
+        }
+        
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        
+        nav ul li a:hover, nav ul li a.active {
+            background-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+        
+        /* Login */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+        }
+        
+        .login-form {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            border-top: 5px solid var(--primary-color);
+        }
+        
+        .login-form h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        /* Módulos */
+        .module {
+            display: none;
+            background-color: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .module.active {
+            display: block;
+        }
+        
+        h2 {
+            color: var(--dark-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Tarjetas de Clientes/Espacios */
+        .client-card, .space-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            border-left: 5px solid var(--primary-color);
+            transition: all 0.3s;
+        }
+        
+        .client-card:hover, .space-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .client-card.active {
+            border-left-color: var(--secondary-color);
+        }
+        
+        .client-card.expired {
+            border-left-color: var(--danger-color);
+        }
+        
+        .client-card.warning {
+            border-left-color: var(--warning-color);
+        }
+        
+        .space-card.available {
+            border-left-color: var(--secondary-color);
+        }
+        
+        .space-card.occupied {
+            border-left-color: var(--primary-color);
+        }
+        
+        .space-card.maintenance {
+            border-left-color: var(--warning-color);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .client-name, .space-name {
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+        
+        .status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .status.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .status.expired {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .status.warning {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .status.available {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .status.occupied {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .status.maintenance {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .card-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .detail-item {
+            margin-bottom: 8px;
+        }
+        
+        .detail-label {
+            font-weight: bold;
+            color: #777;
+            font-size: 0.9rem;
+        }
+        
+        /* Botones y Acciones */
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-success {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .btn-admin {
+            background-color: var(--admin-color);
+            color: white;
+        }
+        
+        .btn-client {
+            background-color: var(--client-color);
+            color: white;
+        }
+        
+        .btn-accounting {
+            background-color: var(--accounting-color);
+            color: white;
+        }
+        
+        .btn-info {
+            background-color: var(--info-color);
+            color: white;
+        }
+        
+        .btn-sales {
+            background-color: var(--sales-color);
+            color: white;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        /* Formularios */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--dark-color);
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        /* Búsqueda */
+        .search-bar {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .search-bar input {
+            padding: 12px 45px 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            width: 100%;
+        }
+        
+        .search-bar i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #777;
+        }
+        
+        /* Estadísticas */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        
+        .stat-card.active {
+            border-top: 4px solid var(--secondary-color);
+        }
+        
+        .stat-card.expired {
+            border-top: 4px solid var(--danger-color);
+        }
+        
+        .stat-card.warning {
+            border-top: 4px solid var(--warning-color);
+        }
+        
+        .stat-card.total {
+            border-top: 4px solid var(--primary-color);
+        }
+        
+        .stat-card.income {
+            border-top: 4px solid var(--accounting-color);
+        }
+        
+        .stat-card.info {
+            border-top: 4px solid var(--info-color);
+        }
+        
+        .stat-card.sales {
+            border-top: 4px solid var(--sales-color);
+        }
+        
+        /* Grid de Espacios */
+        .spaces-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .space-item {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .space-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .space-item.available {
+            background-color: #e8f5e8;
+            border: 2px solid var(--secondary-color);
+        }
+        
+        .space-item.occupied {
+            background-color: #e3f2fd;
+            border: 2px solid var(--primary-color);
+        }
+        
+        .space-item.maintenance {
+            background-color: #fef9e7;
+            border: 2px solid var(--warning-color);
+        }
+        
+        .space-number {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .space-info {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .space-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+        
+        .space-actions .btn {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+        
+        /* Estados vacíos */
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+        
+        /* Tablas */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: white;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background-color: var(--light-color);
+            font-weight: bold;
+            color: var(--dark-color);
+            position: sticky;
+            top: 0;
+        }
+        
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .income-positive {
+            color: var(--secondary-color);
+            font-weight: bold;
+        }
+        
+        .income-negative {
+            color: var(--danger-color);
+            font-weight: bold;
+        }
+        
+        /* Filtros de contabilidad */
+        .filters {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        /* Gráficos */
+        .chart-container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px/10px rgba(0,0,0,0.08);
+        }
+        
+        .chart-placeholder {
+            height: 300px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #666;
+            font-size: 1.2rem;
+        }
+        
+        /* Notificaciones */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: translateX(120%);
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background-color: var(--secondary-color);
+        }
+        
+        .notification.error {
+            background-color: var(--danger-color);
+        }
+        
+        .notification.warning {
+            background-color: var(--warning-color);
+        }
+        
+        /* Carga */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 25px;
+            color: #777;
+            border-top: 1px solid #ddd;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            
+            nav ul {
+                margin-top: 15px;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            nav ul li {
+                margin: 0;
+            }
+            
+            .card-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .spaces-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+            
+            .filter-row {
+                flex-direction: column;
+            }
+            
+            .filter-group {
+                width: 100%;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .module {
+                padding: 15px;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .spaces-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+            
+            nav ul li a span {
+                display: none;
+            }
+            
+            nav ul li a {
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Notificaciones -->
+    <div id="notification" class="notification"></div>
+    
+    <!-- Pantalla de Login -->
+    <div id="login-screen">
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <i class="fas fa-parking"></i>
+                        Park<span>Master</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="container">
+            <div class="login-container">
+                <div class="login-form">
+                    <h2><i class="fas fa-parking"></i> Iniciar Sesión</h2>
+                    <div class="form-group">
+                        <label for="login-email"><i class="fas fa-envelope"></i> Email</label>
+                        <input type="email" id="login-email" placeholder="tu@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password"><i class="fas fa-lock"></i> Contraseña</label>
+                        <input type="password" id="login-password" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <button id="login-btn" class="btn btn-primary" style="width: 100%;">
+                            <i class="fas fa-sign-in-alt"></i> Ingresar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Aplicación Principal (oculta inicialmente) -->
+    <div id="app" style="display: none;">
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <i class="fas fa-parking"></i>
+                        Park<span>Master</span>
+                    </div>
+                    <nav>
+                        <ul>
+                            <li><a href="#" class="nav-link active" data-module="dashboard">
+                                <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+                            </a></li>
+                            <li id="admin-nav" style="display: none;">
+                                <a href="#" class="nav-link" data-module="clients">
+                                    <i class="fas fa-users"></i> <span>Clientes</span>
+                                </a>
+                            </li>
+                            <li id="admin-nav2" style="display: none;">
+                                <a href="#" class="nav-link" data-module="spaces">
+                                    <i class="fas fa-car"></i> <span>Espacios</span>
+                                </a>
+                            </li>
+                            <li id="admin-nav3" style="display: none;">
+                                <a href="#" class="nav-link" data-module="sales">
+                                    <i class="fas fa-cash-register"></i> <span>Ventas Diarias</span>
+                                </a>
+                            </li>
+                            <li id="admin-nav4" style="display: none;">
+                                <a href="#" class="nav-link" data-module="accounting">
+                                    <i class="fas fa-chart-line"></i> <span>Contabilidad</span>
+                                </a>
+                            </li>
+                            <li><a href="#" class="nav-link" data-module="profile">
+                                <i class="fas fa-user"></i> <span>Mi Perfil</span>
+                            </a></li>
+                        </ul>
+                    </nav>
+                    <div class="user-info">
+                        <span id="user-name">Usuario</span>
+                        <span id="user-role" class="user-role">Rol</span>
+                        <button id="logout-btn" class="btn btn-danger">
+                            <i class="fas fa-sign-out-alt"></i> <span>Cerrar Sesión</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="container">
+            <!-- Dashboard -->
+            <div id="dashboard" class="module active">
+                <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
+                <div id="admin-dashboard" style="display: none;">
+                    <div class="stats">
+                        <div class="stat-card total">
+                            <div class="stat-label">Total Clientes</div>
+                            <div class="stat-value" id="total-clients">0</div>
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-card active">
+                            <div class="stat-label">Suscripciones Activas</div>
+                            <div class="stat-value" id="active-subscriptions">0</div>
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-card warning">
+                            <div class="stat-label">Por Vencer</div>
+                            <div class="stat-value" id="warning-subscriptions">0</div>
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-card expired">
+                            <div class="stat-label">Vencidas</div>
+                            <div class="stat-value" id="expired-subscriptions">0</div>
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="stat-card income">
+                            <div class="stat-label">Ingreso Mensual</div>
+                            <div class="stat-value" id="monthly-income">$0</div>
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-card sales">
+                            <div class="stat-label">Ventas Hoy</div>
+                            <div class="stat-value" id="today-sales">$0</div>
+                            <i class="fas fa-cash-register"></i>
+                        </div>
+                    </div>
+                    
+                    <h3><i class="fas fa-users"></i> Clientes Recientes</h3>
+                    <div class="search-bar">
+                        <input type="text" id="search-dashboard" placeholder="Buscar cliente...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    
+                    <div id="clients-list-dashboard">
+                        <!-- Los clientes se cargarán aquí dinámicamente -->
+                    </div>
+                </div>
+                
+                <div id="client-dashboard" style="display: none;">
+                    <div class="client-card active">
+                        <div class="card-header">
+                            <div class="client-name" id="client-dash-name">Nombre del Cliente</div>
+                            <div class="status active" id="client-dash-status">Activa</div>
+                        </div>
+                        <div class="card-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Vehículo:</span>
+                                <span id="client-dash-vehicle">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Placa:</span>
+                                <span id="client-dash-plate">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Espacio Asignado:</span>
+                                <span id="client-dash-space">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Próximo Vencimiento:</span>
+                                <span id="client-dash-expiry">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Días Restantes:</span>
+                                <span id="client-dash-days">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Monto Mensual:</span>
+                                <span id="client-dash-amount">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-top: 30px;"><i class="fas fa-history"></i> Historial de Pagos</h3>
+                    <div id="payment-history">
+                        <!-- El historial se cargará aquí dinámicamente -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Módulo Gestión de Clientes (Solo Admin) -->
+            <div id="clients" class="module">
+                <h2><i class="fas fa-users"></i> Gestión de Clientes</h2>
+                
+                <div class="actions" style="margin-bottom: 20px;">
+                    <button id="add-client-btn" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Agregar Cliente
+                    </button>
+                    <button id="export-clients-btn" class="btn btn-info">
+                        <i class="fas fa-file-excel"></i> Exportar a Excel
+                    </button>
+                    <button id="reset-data-btn" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Resetear Datos
+                    </button>
+                </div>
+                
+                <div class="search-bar">
+                    <input type="text" id="search-clients" placeholder="Buscar por nombre, placa o email...">
+                    <i class="fas fa-search"></i>
+                </div>
+                
+                <div id="clients-list">
+                    <!-- Los clientes se cargarán aquí dinámicamente -->
+                </div>
+            </div>
+            
+            <!-- Módulo Gestión de Espacios (Solo Admin) -->
+            <div id="spaces" class="module">
+                <h2><i class="fas fa-car"></i> Gestión de Espacios</h2>
+                
+                <div class="stats">
+                    <div class="stat-card total">
+                        <div class="stat-label">Total Espacios</div>
+                        <div class="stat-value" id="total-spaces">140</div>
+                        <i class="fas fa-parking"></i>
+                    </div>
+                    <div class="stat-card available">
+                        <div class="stat-label">Disponibles</div>
+                        <div class="stat-value" id="available-spaces">0</div>
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-card occupied">
+                        <div class="stat-label">Ocupados</div>
+                        <div class="stat-value" id="occupied-spaces">0</div>
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-label">En Mantenimiento</div>
+                        <div class="stat-value" id="maintenance-spaces">0</div>
+                        <i class="fas fa-tools"></i>
+                    </div>
+                </div>
+                
+                <div class="actions" style="margin-bottom: 20px;">
+                    <button id="add-space-btn" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Agregar Espacio
+                    </button>
+                    <button id="bulk-maintenance-btn" class="btn btn-warning">
+                        <i class="fas fa-tools"></i> Gestión Masiva
+                    </button>
+                </div>
+                
+                <h3><i class="fas fa-map"></i> Mapa de Espacios</h3>
+                <div class="spaces-grid" id="spaces-grid">
+                    <!-- Los espacios se cargarán aquí dinámicamente -->
+                </div>
+            </div>
+            
+            <!-- Módulo Ventas Diarias (Solo Admin) -->
+            <div id="sales" class="module">
+                <h2><i class="fas fa-cash-register"></i> Ventas Diarias</h2>
+                
+                <div class="stats">
+                    <div class="stat-card sales">
+                        <div class="stat-label">Ventas de Hoy</div>
+                        <div class="stat-value" id="today-sales-amount">$0</div>
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-card income">
+                        <div class="stat-label">Ventas del Mes</div>
+                        <div class="stat-value" id="month-sales-amount">$0</div>
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-card total">
+                        <div class="stat-label">Total Ventas</div>
+                        <div class="stat-value" id="total-sales-amount">$0</div>
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="stat-card info">
+                        <div class="stat-label">Promedio Diario</div>
+                        <div class="stat-value" id="average-daily-sales">$0</div>
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                </div>
+                
+                <div class="actions" style="margin-bottom: 20px;">
+                    <button id="add-sale-btn" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Registrar Venta
+                    </button>
+                    <button id="export-sales-btn" class="btn btn-info">
+                        <i class="fas fa-file-excel"></i> Exportar a Excel
+                    </button>
+                </div>
+                
+                <h3><i class="fas fa-history"></i> Registro de Ventas</h3>
+                <div class="table-container">
+                    <table id="sales-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Concepto</th>
+                                <th>Vehículo/Placa</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Método de Pago</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sales-table-body">
+                            <!-- Las ventas se cargarán aquí dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Módulo Contabilidad (Solo Admin) -->
+            <div id="accounting" class="module">
+                <h2><i class="fas fa-chart-line"></i> Contabilidad</h2>
+                
+                <div class="stats">
+                    <div class="stat-card income">
+                        <div class="stat-label">Ingresos del Mes</div>
+                        <div class="stat-value" id="current-month-income">$0</div>
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-card total">
+                        <div class="stat-label">Ingresos Totales</div>
+                        <div class="stat-value" id="total-income">$0</div>
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="stat-card active">
+                        <div class="stat-label">Clientes Activos</div>
+                        <div class="stat-value" id="accounting-active-clients">0</div>
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-card info">
+                        <div class="stat-label">Tasa de Ocupación</div>
+                        <div class="stat-value" id="occupancy-rate">0%</div>
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                </div>
+                
+                <div class="filters">
+                    <h3><i class="fas fa-filter"></i> Filtros</h3>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="accounting-year">Año</label>
+                            <select id="accounting-year">
+                                <option value="2023">2023</option>
+                                <option value="2024" selected>2024</option>
+                                <option value="2025">2025</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="accounting-month">Mes</label>
+                            <select id="accounting-month">
+                                <option value="all">Todos los meses</option>
+                                <option value="1">Enero</option>
+                                <option value="2">Febrero</option>
+                                <option value="3">Marzo</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Mayo</option>
+                                <option value="6">Junio</option>
+                                <option value="7">Julio</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Septiembre</option>
+                                <option value="10">Octubre</option>
+                                <option value="11">Noviembre</option>
+                                <option value="12">Diciembre</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="accounting-type">Tipo</label>
+                            <select id="accounting-type">
+                                <option value="all">Todos los tipos</option>
+                                <option value="suscripcion">Suscripción</option>
+                                <option value="venta">Venta Diaria</option>
+                                <option value="multa">Multa</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <button id="apply-filters-btn" class="btn btn-primary" style="width: 100%;">
+                                <i class="fas fa-filter"></i> Aplicar Filtros
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3><i class="fas fa-chart-bar"></i> Ingresos Mensuales</h3>
+                    <div class="chart-placeholder">
+                        Gráfico de ingresos mensuales (implementación futura)
+                    </div>
+                </div>
+                
+                <h3><i class="fas fa-list"></i> Detalle de Ingresos</h3>
+                <div class="table-container">
+                    <table id="accounting-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Concepto</th>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Método de Pago</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accounting-table-body">
+                            <!-- Los ingresos se cargarán aquí dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Módulo Perfil de Usuario -->
+            <div id="profile" class="module">
+                <h2><i class="fas fa-user"></i> Mi Perfil</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="profile-name"><i class="fas fa-user"></i> Nombre Completo</label>
+                        <input type="text" id="profile-name" placeholder="Tu nombre completo">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-email"><i class="fas fa-envelope"></i> Email</label>
+                        <input type="email" id="profile-email" placeholder="tu@email.com">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="profile-phone"><i class="fas fa-phone"></i> Teléfono</label>
+                        <input type="tel" id="profile-phone" placeholder="+1 (555) 123-4567">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-address"><i class="fas fa-home"></i> Dirección</label>
+                        <input type="text" id="profile-address" placeholder="Tu dirección">
+                    </div>
+                </div>
+                
+                <h3><i class="fas fa-lock"></i> Cambiar Contraseña</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="profile-current-password">Contraseña Actual</label>
+                        <input type="password" id="profile-current-password" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-new-password">Nueva Contraseña</label>
+                        <input type="password" id="profile-new-password" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-confirm-password">Confirmar Nueva Contraseña</label>
+                        <input type="password" id="profile-confirm-password" placeholder="••••••••">
+                    </div>
+                </div>
+                
+                <div class="actions">
+                    <button id="save-profile-btn" class="btn btn-success">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>ParkMaster &copy; 2024 - Sistema de Gestión de Estacionamiento</p>
+            <p>Desarrollado con <i class="fas fa-heart" style="color: #e74c3c;"></i> para una mejor experiencia de estacionamiento</p>
+        </footer>
+    </div>
+
+    <!-- Modal para Agregar/Editar Cliente -->
+    <div id="client-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+            <h2 id="client-modal-title"><i class="fas fa-user-plus"></i> Agregar Cliente</h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="client-name">Nombre Completo</label>
+                    <input type="text" id="client-name" placeholder="Nombre del cliente">
+                </div>
+                <div class="form-group">
+                    <label for="client-email">Email</label>
+                    <input type="email" id="client-email" placeholder="cliente@email.com">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="client-password">Contraseña</label>
+                    <input type="password" id="client-password" placeholder="Contraseña para el cliente">
+                </div>
+                <div class="form-group">
+                    <label for="client-phone">Teléfono</label>
+                    <input type="tel" id="client-phone" placeholder="+1 (555) 123-4567">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="client-vehicle">Vehículo</label>
+                    <input type="text" id="client-vehicle" placeholder="Marca, modelo, color">
+                </div>
+                <div class="form-group">
+                    <label for="client-plate">Placa</label>
+                    <input type="text" id="client-plate" placeholder="ABC123">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="client-space">Espacio Asignado</label>
+                    <select id="client-space">
+                        <option value="">Seleccionar espacio</option>
+                        <!-- Las opciones se llenarán dinámicamente -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="client-status">Estado</label>
+                    <select id="client-status">
+                        <option value="active">Activo</option>
+                        <option value="expired">Vencido</option>
+                        <option value="warning">Por Vencer</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="client-start-date">Fecha de Inicio</label>
+                    <input type="date" id="client-start-date">
+                </div>
+                <div class="form-group">
+                    <label for="client-end-date">Fecha de Vencimiento</label>
+                    <input type="date" id="client-end-date">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="client-amount">Monto Mensual</label>
+                    <input type="number" id="client-amount" placeholder="0.00" step="0.01">
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button id="save-client-btn" class="btn btn-success">
+                    <i class="fas fa-save"></i> Guardar Cliente
+                </button>
+                <button id="cancel-client-btn" class="btn btn-danger">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Agregar/Editar Espacio -->
+    <div id="space-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px;">
+            <h2 id="space-modal-title"><i class="fas fa-parking"></i> Agregar Espacio</h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="space-number">Número de Espacio</label>
+                    <input type="text" id="space-number" placeholder="A101">
+                </div>
+                <div class="form-group">
+                    <label for="space-type">Tipo de Espacio</label>
+                    <select id="space-type">
+                        <option value="regular">Regular</option>
+                        <option value="premium">Premium</option>
+                        <option value="discapacitado">Discapacitado</option>
+                        <option value="electrico">Eléctrico</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="space-status">Estado</label>
+                    <select id="space-status">
+                        <option value="available">Disponible</option>
+                        <option value="occupied">Ocupado</option>
+                        <option value="maintenance">En Mantenimiento</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="space-rate">Tarifa por Hora ($)</label>
+                    <input type="number" id="space-rate" placeholder="5.00" step="0.01">
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button id="save-space-btn" class="btn btn-success">
+                    <i class="fas fa-save"></i> Guardar Espacio
+                </button>
+                <button id="cancel-space-btn" class="btn btn-danger">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Agregar Venta -->
+    <div id="sale-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px;">
+            <h2><i class="fas fa-cash-register"></i> Registrar Venta</h2>
+            
+            <div class="form-group">
+                <label for="sale-concept">Concepto</label>
+                <input type="text" id="sale-concept" placeholder="Descripción de la venta">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="sale-vehicle">Vehículo/Placa</label>
+                    <input type="text" id="sale-vehicle" placeholder="Vehículo o placa">
+                </div>
+                <div class="form-group">
+                    <label for="sale-type">Tipo</label>
+                    <select id="sale-type">
+                        <option value="suscripcion">Suscripción</option>
+                        <option value="venta">Venta Diaria</option>
+                        <option value="multa">Multa</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="sale-amount">Monto ($)</label>
+                    <input type="number" id="sale-amount" placeholder="0.00" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="sale-payment-method">Método de Pago</label>
+                    <select id="sale-payment-method">
+                        <option value="efectivo">Efectivo</option>
+                        <option value="tarjeta">Tarjeta</option>
+                        <option value="transferencia">Transferencia</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button id="save-sale-btn" class="btn btn-success">
+                    <i class="fas fa-save"></i> Registrar Venta
+                </button>
+                <button id="cancel-sale-btn" class="btn btn-danger">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos iniciales para la aplicación
+        const initialData = {
+            users: [
+                {
+                    id: 1,
+                    name: "Administrador",
+                    email: "admin@parkmaster.com",
+                    password: "admin123",
+                    role: "admin",
+                    phone: "+1 (555) 123-4567",
+                    address: "Oficina Central"
+                }
+            ],
+            clients: [],
+            spaces: [
+                { id: 1, number: "A101", type: "regular", status: "available", rate: 5.00 },
+                { id: 2, number: "A102", type: "regular", status: "available", rate: 5.00 },
+                { id: 3, number: "A103", type: "regular", status: "available", rate: 5.00 },
+                { id: 4, number: "A104", type: "premium", status: "available", rate: 7.50 },
+                { id: 5, number: "A105", type: "premium", status: "available", rate: 7.50 },
+                { id: 6, number: "B101", type: "discapacitado", status: "available", rate: 3.00 },
+                { id: 7, number: "B102", type: "electrico", status: "available", rate: 6.00 },
+                { id: 8, number: "B103", type: "regular", status: "available", rate: 5.00 }
+            ],
+            sales: []
+        };
+
+        // Estado de la aplicación
+        let appState = {
+            currentUser: null,
+            clients: [],
+            spaces: [],
+            sales: [],
+            editingClient: null,
+            editingSpace: null,
+            currentModule: 'dashboard'
+        };
+
+        // Inicialización de la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            setupEventListeners();
+        });
+
+        function initializeApp() {
+            // Cargar datos del localStorage o usar datos iniciales
+            const storedUsers = localStorage.getItem('parkmaster_users');
+            const storedClients = localStorage.getItem('parkmaster_clients');
+            const storedSpaces = localStorage.getItem('parkmaster_spaces');
+            const storedSales = localStorage.getItem('parkmaster_sales');
+            
+            if (storedUsers && storedClients && storedSpaces && storedSales) {
+                appState.clients = JSON.parse(storedClients);
+                appState.spaces = JSON.parse(storedSpaces);
+                appState.sales = JSON.parse(storedSales);
+            } else {
+                // Usar datos iniciales
+                appState.clients = initialData.clients;
+                appState.spaces = initialData.spaces;
+                appState.sales = initialData.sales;
+                
+                // Guardar datos iniciales en localStorage
+                localStorage.setItem('parkmaster_users', JSON.stringify(initialData.users));
+                localStorage.setItem('parkmaster_clients', JSON.stringify(initialData.clients));
+                localStorage.setItem('parkmaster_spaces', JSON.stringify(initialData.spaces));
+                localStorage.setItem('parkmaster_sales', JSON.stringify(initialData.sales));
+            }
+            
+            // Verificar si hay un usuario logueado
+            const loggedInUser = localStorage.getItem('parkmaster_loggedInUser');
+            if (loggedInUser) {
+                const user = JSON.parse(loggedInUser);
+                loginUser(user);
+            }
+        }
+
+        function setupEventListeners() {
+            // Login
+            document.getElementById('login-btn').addEventListener('click', handleLogin);
+            
+            // Logout
+            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+            
+            // Navegación
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const module = this.getAttribute('data-module');
+                    showModule(module);
+                });
+            });
+            
+            // Clientes
+            document.getElementById('add-client-btn').addEventListener('click', () => showClientModal());
+            document.getElementById('save-client-btn').addEventListener('click', saveClient);
+            document.getElementById('cancel-client-btn').addEventListener('click', hideClientModal);
+            document.getElementById('export-clients-btn').addEventListener('click', exportClientsToExcel);
+            document.getElementById('reset-data-btn').addEventListener('click', resetData);
+            document.getElementById('search-clients').addEventListener('input', filterClients);
+            document.getElementById('search-dashboard').addEventListener('input', filterDashboardClients);
+            
+            // Espacios
+            document.getElementById('add-space-btn').addEventListener('click', () => showSpaceModal());
+            document.getElementById('save-space-btn').addEventListener('click', saveSpace);
+            document.getElementById('cancel-space-btn').addEventListener('click', hideSpaceModal);
+            document.getElementById('bulk-maintenance-btn').addEventListener('click', bulkMaintenance);
+            
+            // Ventas
+            document.getElementById('add-sale-btn').addEventListener('click', () => showSaleModal());
+            document.getElementById('save-sale-btn').addEventListener('click', saveSale);
+            document.getElementById('cancel-sale-btn').addEventListener('click', hideSaleModal);
+            document.getElementById('export-sales-btn').addEventListener('click', exportSalesToExcel);
+            
+            // Contabilidad
+            document.getElementById('apply-filters-btn').addEventListener('click', applyAccountingFilters);
+            
+            // Perfil
+            document.getElementById('save-profile-btn').addEventListener('click', saveProfile);
+            
+            // Cerrar modales al hacer clic fuera
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            if (!email || !password) {
+                showNotification('Por favor, complete todos los campos', 'error');
+                return;
+            }
+            
+            const users = JSON.parse(localStorage.getItem('parkmaster_users') || '[]');
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                loginUser(user);
+                showNotification(`Bienvenido, ${user.name}`, 'success');
+            } else {
+                showNotification('Credenciales incorrectas', 'error');
+            }
+        }
+
+        function loginUser(user) {
+            appState.currentUser = user;
+            localStorage.setItem('parkmaster_loggedInUser', JSON.stringify(user));
+            
+            // Ocultar login, mostrar aplicación
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            
+            // Actualizar información del usuario
+            document.getElementById('user-name').textContent = user.name;
+            document.getElementById('user-role').textContent = user.role === 'admin' ? 'Administrador' : 'Cliente';
+            document.getElementById('user-role').className = `user-role ${user.role}`;
+            
+            // Mostrar/ocultar elementos según el rol
+            if (user.role === 'admin') {
+                document.getElementById('admin-dashboard').style.display = 'block';
+                document.getElementById('client-dashboard').style.display = 'none';
+                
+                document.querySelectorAll('#admin-nav, #admin-nav2, #admin-nav3, #admin-nav4').forEach(el => {
+                    el.style.display = 'block';
+                });
+                
+                // Cargar datos para admin
+                loadDashboardData();
+                loadClients();
+                loadSpaces();
+                loadSales();
+                loadAccountingData();
+            } else {
+                document.getElementById('admin-dashboard').style.display = 'none';
+                document.getElementById('client-dashboard').style.display = 'block';
+                
+                document.querySelectorAll('#admin-nav, #admin-nav2, #admin-nav3, #admin-nav4').forEach(el => {
+                    el.style.display = 'none';
+                });
+                
+                // Cargar datos para cliente
+                loadClientDashboard();
+            }
+            
+            // Mostrar módulo dashboard por defecto
+            showModule('dashboard');
+        }
+
+        function handleLogout() {
+            appState.currentUser = null;
+            localStorage.removeItem('parkmaster_loggedInUser');
+            
+            // Ocultar aplicación, mostrar login
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'block';
+            
+            // Limpiar campos de login
+            document.getElementById('login-email').value = '';
+            document.getElementById('login-password').value = '';
+            
+            showNotification('Sesión cerrada correctamente', 'success');
+        }
+
+        function showModule(moduleName) {
+            // Ocultar todos los módulos
+            document.querySelectorAll('.module').forEach(module => {
+                module.classList.remove('active');
+            });
+            
+            // Remover clase active de todos los enlaces de navegación
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Mostrar el módulo seleccionado
+            document.getElementById(moduleName).classList.add('active');
+            
+            // Activar el enlace de navegación correspondiente
+            document.querySelector(`.nav-link[data-module="${moduleName}"]`).classList.add('active');
+            
+            // Actualizar estado actual
+            appState.currentModule = moduleName;
+            
+            // Cargar datos específicos del módulo si es necesario
+            if (moduleName === 'clients' && appState.currentUser.role === 'admin') {
+                loadClients();
+            } else if (moduleName === 'spaces' && appState.currentUser.role === 'admin') {
+                loadSpaces();
+            } else if (moduleName === 'sales' && appState.currentUser.role === 'admin') {
+                loadSales();
+            } else if (moduleName === 'accounting' && appState.currentUser.role === 'admin') {
+                loadAccountingData();
+            } else if (moduleName === 'profile') {
+                loadProfile();
+            }
+        }
+
+        function loadDashboardData() {
+            // Actualizar estadísticas
+            document.getElementById('total-clients').textContent = appState.clients.length;
+            
+            const activeClients = appState.clients.filter(c => c.status === 'active').length;
+            const warningClients = appState.clients.filter(c => c.status === 'warning').length;
+            const expiredClients = appState.clients.filter(c => c.status === 'expired').length;
+            
+            document.getElementById('active-subscriptions').textContent = activeClients;
+            document.getElementById('warning-subscriptions').textContent = warningClients;
+            document.getElementById('expired-subscriptions').textContent = expiredClients;
+            
+            // Calcular ingresos mensuales
+            const monthlyIncome = appState.clients.reduce((total, client) => {
+                return total + (client.status === 'active' ? client.amount : 0);
+            }, 0);
+            
+            document.getElementById('monthly-income').textContent = `$${monthlyIncome.toFixed(2)}`;
+            
+            // Calcular ventas de hoy
+            const today = new Date().toISOString().split('T')[0];
+            const todaySales = appState.sales
+                .filter(sale => sale.date === today)
+                .reduce((total, sale) => total + sale.amount, 0);
+                
+            document.getElementById('today-sales').textContent = `$${todaySales.toFixed(2)}`;
+            
+            // Cargar lista de clientes
+            loadClientsList('clients-list-dashboard');
+        }
+
+        function loadClientDashboard() {
+            // Buscar el cliente que corresponde al usuario actual
+            const client = appState.clients.find(c => c.email === appState.currentUser.email);
+            
+            if (client) {
+                const space = appState.spaces.find(s => s.id == client.spaceId);
+                
+                document.getElementById('client-dash-name').textContent = client.name;
+                document.getElementById('client-dash-status').textContent = 
+                    client.status === 'active' ? 'Activa' : 
+                    client.status === 'warning' ? 'Por Vencer' : 'Vencida';
+                document.getElementById('client-dash-status').className = `status ${client.status}`;
+                document.getElementById('client-dash-vehicle').textContent = client.vehicle;
+                document.getElementById('client-dash-plate').textContent = client.plate;
+                document.getElementById('client-dash-space').textContent = space ? space.number : 'No asignado';
+                document.getElementById('client-dash-expiry').textContent = formatDate(client.endDate);
+                
+                // Calcular días restantes
+                const today = new Date();
+                const endDate = new Date(client.endDate);
+                const diffTime = endDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                document.getElementById('client-dash-days').textContent = diffDays > 0 ? diffDays : 0;
+                
+                document.getElementById('client-dash-amount').textContent = `$${client.amount.toFixed(2)}`;
+                
+                // Cargar historial de pagos
+                loadPaymentHistory(client.payments);
+            } else {
+                // Si no se encuentra el cliente, mostrar un mensaje
+                document.getElementById('client-dash-name').textContent = appState.currentUser.name;
+                document.getElementById('client-dash-status').textContent = 'No disponible';
+                document.getElementById('client-dash-status').className = 'status expired';
+                document.getElementById('client-dash-vehicle').textContent = 'No disponible';
+                document.getElementById('client-dash-plate').textContent = 'No disponible';
+                document.getElementById('client-dash-space').textContent = 'No asignado';
+                document.getElementById('client-dash-expiry').textContent = 'No disponible';
+                document.getElementById('client-dash-days').textContent = '0';
+                document.getElementById('client-dash-amount').textContent = '$0.00';
+                
+                document.getElementById('payment-history').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Información no disponible</h3>
+                        <p>No se encontraron datos de cliente para este usuario</p>
+                    </div>
+                `;
+            }
+        }
+
+        function loadPaymentHistory(payments) {
+            const container = document.getElementById('payment-history');
+            
+            if (!payments || payments.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-receipt"></i>
+                        <h3>No hay pagos registrados</h3>
+                        <p>El historial de pagos aparecerá aquí</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            payments.forEach(payment => {
+                html += `
+                    <div class="client-card">
+                        <div class="card-header">
+                            <div class="client-name">Pago - ${formatDate(payment.date)}</div>
+                            <div class="status active">Pagado</div>
+                        </div>
+                        <div class="card-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Monto:</span>
+                                <span>$${payment.amount.toFixed(2)}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Fecha:</span>
+                                <span>${formatDate(payment.date)}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function loadClients() {
+            loadClientsList('clients-list');
+        }
+
+        function loadClientsList(containerId) {
+            const container = document.getElementById(containerId);
+            
+            if (appState.clients.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <h3>No hay clientes registrados</h3>
+                        <p>Agrega tu primer cliente para comenzar</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            appState.clients.forEach(client => {
+                const space = appState.spaces.find(s => s.id == client.spaceId);
+                const spaceInfo = space ? space.number : 'No asignado';
+                
+                html += `
+                    <div class="client-card ${client.status}">
+                        <div class="card-header">
+                            <div class="client-name">${client.name}</div>
+                            <div class="status ${client.status}">
+                                ${client.status === 'active' ? 'Activo' : 
+                                  client.status === 'warning' ? 'Por Vencer' : 'Vencido'}
+                            </div>
+                        </div>
+                        <div class="card-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Email:</span>
+                                <span>${client.email}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Teléfono:</span>
+                                <span>${client.phone}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Vehículo:</span>
+                                <span>${client.vehicle}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Placa:</span>
+                                <span>${client.plate}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Espacio:</span>
+                                <span>${spaceInfo}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Vencimiento:</span>
+                                <span>${formatDate(client.endDate)}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Monto:</span>
+                                <span>$${client.amount.toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn btn-primary edit-client" data-id="${client.id}">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button class="btn btn-danger delete-client" data-id="${client.id}">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                            ${client.status !== 'active' ? `
+                            <button class="btn btn-success renew-client" data-id="${client.id}">
+                                <i class="fas fa-redo"></i> Renovar
+                            </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Agregar event listeners a los botones
+            document.querySelectorAll('.edit-client').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const clientId = this.getAttribute('data-id');
+                    editClient(clientId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-client').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const clientId = this.getAttribute('data-id');
+                    deleteClient(clientId);
+                });
+            });
+            
+            document.querySelectorAll('.renew-client').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const clientId = this.getAttribute('data-id');
+                    renewClient(clientId);
+                });
+            });
+        }
+
+        function filterClients() {
+            const searchTerm = document.getElementById('search-clients').value.toLowerCase();
+            const clientCards = document.querySelectorAll('#clients-list .client-card');
+            
+            clientCards.forEach(card => {
+                const clientName = card.querySelector('.client-name').textContent.toLowerCase();
+                const clientEmail = card.querySelector('.card-details .detail-item:nth-child(1) span:nth-child(2)').textContent.toLowerCase();
+                const clientPlate = card.querySelector('.card-details .detail-item:nth-child(4) span:nth-child(2)').textContent.toLowerCase();
+                
+                if (clientName.includes(searchTerm) || clientEmail.includes(searchTerm) || clientPlate.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function filterDashboardClients() {
+            const searchTerm = document.getElementById('search-dashboard').value.toLowerCase();
+            const clientCards = document.querySelectorAll('#clients-list-dashboard .client-card');
+            
+            clientCards.forEach(card => {
+                const clientName = card.querySelector('.client-name').textContent.toLowerCase();
+                
+                if (clientName.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function showClientModal(client = null) {
+            appState.editingClient = client;
+            
+            const modal = document.getElementById('client-modal');
+            const title = document.getElementById('client-modal-title');
+            
+            if (client) {
+                title.innerHTML = '<i class="fas fa-edit"></i> Editar Cliente';
+                document.getElementById('client-name').value = client.name;
+                document.getElementById('client-email').value = client.email;
+                document.getElementById('client-password').value = ''; // No mostrar contraseña por seguridad
+                document.getElementById('client-phone').value = client.phone;
+                document.getElementById('client-vehicle').value = client.vehicle;
+                document.getElementById('client-plate').value = client.plate;
+                document.getElementById('client-space').value = client.spaceId || '';
+                document.getElementById('client-start-date').value = client.startDate;
+                document.getElementById('client-end-date').value = client.endDate;
+                document.getElementById('client-amount').value = client.amount;
+                document.getElementById('client-status').value = client.status;
+            } else {
+                title.innerHTML = '<i class="fas fa-user-plus"></i> Agregar Cliente';
+                document.getElementById('client-name').value = '';
+                document.getElementById('client-email').value = '';
+                document.getElementById('client-password').value = '';
+                document.getElementById('client-phone').value = '';
+                document.getElementById('client-vehicle').value = '';
+                document.getElementById('client-plate').value = '';
+                document.getElementById('client-space').value = '';
+                document.getElementById('client-start-date').value = '';
+                document.getElementById('client-end-date').value = '';
+                document.getElementById('client-amount').value = '';
+                document.getElementById('client-status').value = 'active';
+            }
+            
+            // Cargar opciones de espacios
+            loadSpaceOptions();
+            
+            modal.style.display = 'flex';
+        }
+
+        function hideClientModal() {
+            document.getElementById('client-modal').style.display = 'none';
+        }
+
+        function loadSpaceOptions() {
+            const select = document.getElementById('client-space');
+            select.innerHTML = '<option value="">Seleccionar espacio</option>';
+            
+            appState.spaces.forEach(space => {
+                // Solo mostrar espacios disponibles o el espacio actual si estamos editando
+                if (space.status === 'available' || 
+                   (appState.editingClient && appState.editingClient.spaceId == space.id)) {
+                    select.innerHTML += `<option value="${space.id}">${space.number} (${space.type})</option>`;
+                }
+            });
+            
+            // Si estamos editando, seleccionar el espacio actual
+            if (appState.editingClient) {
+                select.value = appState.editingClient.spaceId;
+            }
+        }
+
+        function saveClient() {
+            const name = document.getElementById('client-name').value;
+            const email = document.getElementById('client-email').value;
+            const password = document.getElementById('client-password').value;
+            const phone = document.getElementById('client-phone').value;
+            const vehicle = document.getElementById('client-vehicle').value;
+            const plate = document.getElementById('client-plate').value;
+            const spaceId = document.getElementById('client-space').value;
+            const startDate = document.getElementById('client-start-date').value;
+            const endDate = document.getElementById('client-end-date').value;
+            const amount = parseFloat(document.getElementById('client-amount').value);
+            const status = document.getElementById('client-status').value;
+            
+            if (!name || !email || !phone || !vehicle || !plate || !spaceId || !startDate || !endDate || !amount) {
+                showNotification('Por favor, complete todos los campos', 'error');
+                return;
+            }
+            
+            // Si estamos creando un nuevo cliente, verificar que se haya proporcionado una contraseña
+            if (!appState.editingClient && !password) {
+                showNotification('Por favor, proporcione una contraseña para el cliente', 'error');
+                return;
+            }
+            
+            if (appState.editingClient) {
+                // Actualizar cliente existente
+                const index = appState.clients.findIndex(c => c.id == appState.editingClient.id);
+                if (index !== -1) {
+                    appState.clients[index] = {
+                        ...appState.clients[index],
+                        name,
+                        email,
+                        phone,
+                        vehicle,
+                        plate,
+                        spaceId: parseInt(spaceId),
+                        startDate,
+                        endDate,
+                        amount,
+                        status
+                    };
+                }
+                
+                showNotification('Cliente actualizado correctamente', 'success');
+            } else {
+                // Crear nuevo cliente
+                const newClient = {
+                    id: Date.now(), // ID simple basado en timestamp
+                    name,
+                    email,
+                    phone,
+                    vehicle,
+                    plate,
+                    spaceId: parseInt(spaceId),
+                    startDate,
+                    endDate,
+                    amount,
+                    status,
+                    payments: []
+                };
+                
+                appState.clients.push(newClient);
+                
+                // Crear también un usuario para que pueda iniciar sesión
+                const users = JSON.parse(localStorage.getItem('parkmaster_users') || '[]');
+                const newUser = {
+                    id: Date.now() + 1, // ID diferente al del cliente
+                    name,
+                    email,
+                    password: password,
+                    role: 'client',
+                    phone,
+                    address: ''
+                };
+                
+                users.push(newUser);
+                localStorage.setItem('parkmaster_users', JSON.stringify(users));
+                
+                showNotification('Cliente agregado correctamente', 'success');
+            }
+            
+            // Actualizar estado del espacio si es necesario
+            if (spaceId) {
+                const spaceIndex = appState.spaces.findIndex(s => s.id == spaceId);
+                if (spaceIndex !== -1) {
+                    appState.spaces[spaceIndex].status = 'occupied';
+                }
+            }
+            
+            // Guardar en localStorage
+            localStorage.setItem('parkmaster_clients', JSON.stringify(appState.clients));
+            localStorage.setItem('parkmaster_spaces', JSON.stringify(appState.spaces));
+            
+            // Recargar datos
+            loadClients();
+            loadSpaces();
+            loadDashboardData();
+            
+            // Cerrar modal
+            hideClientModal();
+        }
+
+        function editClient(clientId) {
+            const client = appState.clients.find(c => c.id == clientId);
+            if (client) {
+                showClientModal(client);
+            }
+        }
+
+        function deleteClient(clientId) {
+            if (confirm('¿Está seguro de que desea eliminar este cliente?')) {
+                // Liberar el espacio asignado
+                const client = appState.clients.find(c => c.id == clientId);
+                if (client && client.spaceId) {
+                    const spaceIndex = appState.spaces.findIndex(s => s.id == client.spaceId);
+                    if (spaceIndex !== -1) {
+                        appState.spaces[spaceIndex].status = 'available';
+                    }
+                }
+                
+                // Eliminar cliente
+                appState.clients = appState.clients.filter(c => c.id != clientId);
+                
+                // Guardar en localStorage
+                localStorage.setItem('parkmaster_clients', JSON.stringify(appState.clients));
+                localStorage.setItem('parkmaster_spaces', JSON.stringify(appState.spaces));
+                
+                // Recargar datos
+                loadClients();
+                loadSpaces();
+                loadDashboardData();
+                
+                showNotification('Cliente eliminado correctamente', 'success');
+            }
+        }
+
+        function renewClient(clientId) {
+            const client = appState.clients.find(c => c.id == clientId);
+            if (client) {
+                // Extender la fecha de vencimiento por un mes
+                const endDate = new Date(client.endDate);
+                endDate.setMonth(endDate.getMonth() + 1);
+                client.endDate = endDate.toISOString().split('T')[0];
+                client.status = 'active';
+                
+                // Agregar pago
+                client.payments.push({
+                    date: new Date().toISOString().split('T')[0],
+                    amount: client.amount
+                });
+                
+                // Guardar en localStorage
+                localStorage.setItem('parkmaster_clients', JSON.stringify(appState.clients));
+                
+                // Recargar datos
+                loadClients();
+                loadDashboardData();
+                
+                showNotification('Suscripción renovada correctamente', 'success');
+            }
+        }
+
+        function loadSpaces() {
+            const container = document.getElementById('spaces-grid');
+            
+            if (appState.spaces.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-parking"></i>
+                        <h3>No hay espacios registrados</h3>
+                        <p>Agrega tu primer espacio para comenzar</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Actualizar estadísticas
+            const totalSpaces = appState.spaces.length;
+            const availableSpaces = appState.spaces.filter(s => s.status === 'available').length;
+            const occupiedSpaces = appState.spaces.filter(s => s.status === 'occupied').length;
+            const maintenanceSpaces = appState.spaces.filter(s => s.status === 'maintenance').length;
+            
+            document.getElementById('total-spaces').textContent = totalSpaces;
+            document.getElementById('available-spaces').textContent = availableSpaces;
+            document.getElementById('occupied-spaces').textContent = occupiedSpaces;
+            document.getElementById('maintenance-spaces').textContent = maintenanceSpaces;
+            
+            // Cargar grid de espacios
+            let html = '';
+            appState.spaces.forEach(space => {
+                const client = appState.clients.find(c => c.spaceId == space.id);
+                
+                html += `
+                    <div class="space-item ${space.status}">
+                        <div class="space-number">${space.number}</div>
+                        <div class="status ${space.status}">
+                            ${space.status === 'available' ? 'Disponible' : 
+                              space.status === 'occupied' ? 'Ocupado' : 'Mantenimiento'}
+                        </div>
+                        <div class="space-info">${space.type}</div>
+                        <div class="space-info">$${space.rate}/hora</div>
+                        ${client ? `<div class="space-info">${client.name}</div>` : ''}
+                        <div class="space-actions">
+                            <button class="btn btn-primary edit-space" data-id="${space.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-danger delete-space" data-id="${space.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Agregar event listeners a los botones
+            document.querySelectorAll('.edit-space').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const spaceId = this.getAttribute('data-id');
+                    editSpace(spaceId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-space').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const spaceId = this.getAttribute('data-id');
+                    deleteSpace(spaceId);
+                });
+            });
+        }
+
+        function showSpaceModal(space = null) {
+            appState.editingSpace = space;
+            
+            const modal = document.getElementById('space-modal');
+            const title = document.getElementById('space-modal-title');
+            
+            if (space) {
+                title.innerHTML = '<i class="fas fa-edit"></i> Editar Espacio';
+                document.getElementById('space-number').value = space.number;
+                document.getElementById('space-type').value = space.type;
+                document.getElementById('space-status').value = space.status;
+                document.getElementById('space-rate').value = space.rate;
+            } else {
+                title.innerHTML = '<i class="fas fa-parking"></i> Agregar Espacio';
+                document.getElementById('space-number').value = '';
+                document.getElementById('space-type').value = 'regular';
+                document.getElementById('space-status').value = 'available';
+                document.getElementById('space-rate').value = '5.00';
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        function hideSpaceModal() {
+            document.getElementById('space-modal').style.display = 'none';
+        }
+
+        function saveSpace() {
+            const number = document.getElementById('space-number').value;
+            const type = document.getElementById('space-type').value;
+            const status = document.getElementById('space-status').value;
+            const rate = parseFloat(document.getElementById('space-rate').value);
+            
+            if (!number || !rate) {
+                showNotification('Por favor, complete todos los campos', 'error');
+                return;
+            }
+            
+            if (appState.editingSpace) {
+                // Actualizar espacio existente
+                const index = appState.spaces.findIndex(s => s.id == appState.editingSpace.id);
+                if (index !== -1) {
+                    appState.spaces[index] = {
+                        ...appState.spaces[index],
+                        number,
+                        type,
+                        status,
+                        rate
+                    };
+                }
+                
+                showNotification('Espacio actualizado correctamente', 'success');
+            } else {
+                // Crear nuevo espacio
+                const newSpace = {
+                    id: Date.now(), // ID simple basado en timestamp
+                    number,
+                    type,
+                    status,
+                    rate
+                };
+                
+                appState.spaces.push(newSpace);
+                showNotification('Espacio agregado correctamente', 'success');
+            }
+            
+            // Guardar en localStorage
+            localStorage.setItem('parkmaster_spaces', JSON.stringify(appState.spaces));
+            
+            // Recargar datos
+            loadSpaces();
+            
+            // Cerrar modal
+            hideSpaceModal();
+        }
+
+        function editSpace(spaceId) {
+            const space = appState.spaces.find(s => s.id == spaceId);
+            if (space) {
+                showSpaceModal(space);
+            }
+        }
+
+        function deleteSpace(spaceId) {
+            if (confirm('¿Está seguro de que desea eliminar este espacio?')) {
+                // Verificar si el espacio está asignado a algún cliente
+                const clientUsingSpace = appState.clients.find(c => c.spaceId == spaceId);
+                if (clientUsingSpace) {
+                    showNotification('No se puede eliminar un espacio asignado a un cliente', 'error');
+                    return;
+                }
+                
+                // Eliminar espacio
+                appState.spaces = appState.spaces.filter(s => s.id != spaceId);
+                
+                // Guardar en localStorage
+                localStorage.setItem('parkmaster_spaces', JSON.stringify(appState.spaces));
+                
+                // Recargar datos
+                loadSpaces();
+                
+                showNotification('Espacio eliminado correctamente', 'success');
+            }
+        }
+
+        function bulkMaintenance() {
+            // En una implementación real, esto permitiría seleccionar múltiples espacios
+            // y cambiar su estado a mantenimiento o disponible
+            if (confirm('¿Desea poner todos los espacios disponibles en mantenimiento?')) {
+                appState.spaces.forEach(space => {
+                    if (space.status === 'available') {
+                        space.status = 'maintenance';
+                    }
+                });
+                
+                // Guardar en localStorage
+                localStorage.setItem('parkmaster_spaces', JSON.stringify(appState.spaces));
+                
+                // Recargar datos
+                loadSpaces();
+                
+                showNotification('Espacios puestos en mantenimiento', 'success');
+            }
+        }
+
+        function loadSales() {
+            const container = document.getElementById('sales-table-body');
+            
+            if (appState.sales.length === 0) {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px;">
+                            <div class="empty-state">
+                                <i class="fas fa-cash-register"></i>
+                                <h3>No hay ventas registradas</h3>
+                                <p>Registra tu primera venta para comenzar</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Actualizar estadísticas
+            const today = new Date().toISOString().split('T')[0];
+            const todaySales = appState.sales
+                .filter(sale => sale.date === today)
+                .reduce((total, sale) => total + sale.amount, 0);
+                
+            const currentMonth = new Date().getMonth() + 1;
+            const currentYear = new Date().getFullYear();
+            const monthSales = appState.sales
+                .filter(sale => {
+                    const saleDate = new Date(sale.date);
+                    return saleDate.getMonth() + 1 === currentMonth && saleDate.getFullYear() === currentYear;
+                })
+                .reduce((total, sale) => total + sale.amount, 0);
+                
+            const totalSales = appState.sales.reduce((total, sale) => total + sale.amount, 0);
+            const averageDailySales = totalSales / Math.max(appState.sales.length, 1);
+            
+            document.getElementById('today-sales-amount').textContent = `$${todaySales.toFixed(2)}`;
+            document.getElementById('month-sales-amount').textContent = `$${monthSales.toFixed(2)}`;
+            document.getElementById('total-sales-amount').textContent = `$${totalSales.toFixed(2)}`;
+            document.getElementById('average-daily-sales').textContent = `$${averageDailySales.toFixed(2)}`;
+            
+            // Cargar tabla de ventas
+            let html = '';
+            appState.sales.forEach(sale => {
+                html += `
+                    <tr>
+                        <td>${formatDate(sale.date)}</td>
+                        <td>${sale.concept}</td>
+                        <td>${sale.vehicle}</td>
+                        <td>
+                            <span class="status ${sale.type === 'suscripcion' ? 'active' : 
+                                              sale.type === 'venta' ? 'available' : 'warning'}">
+                                ${sale.type === 'suscripcion' ? 'Suscripción' : 
+                                  sale.type === 'venta' ? 'Venta Diaria' : 'Multa'}
+                            </span>
+                        </td>
+                        <td class="income-positive">$${sale.amount.toFixed(2)}</td>
+                        <td>${sale.paymentMethod}</td>
+                        <td>
+                            <button class="btn btn-danger delete-sale" data-id="${sale.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Agregar event listeners a los botones de eliminar
+            document.querySelectorAll('.delete-sale').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const saleId = this.getAttribute('data-id');
+                    deleteSale(saleId);
+                });
+            });
+        }
+
+        function showSaleModal() {
+            document.getElementById('sale-modal').style.display = 'flex';
+        }
+
+        function hideSaleModal() {
+            document.getElementById('sale-modal').style.display = 'none';
+        }
+
+        function saveSale() {
+            const concept = document.getElementById('sale-concept').value;
+            const vehicle = document.getElementById('sale-vehicle').value;
+            const type = document.getElementById('sale-type').value;
+            const amount = parseFloat(document.getElementById('sale-amount').value);
+            const paymentMethod = document.getElementById('sale-payment-method').value;
+            
+            if (!concept || !vehicle || !amount) {
+                showNotification('Por favor, complete todos los campos', 'error');
+                return;
+            }
+            
+            const newSale = {
+                id: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                concept,
+                vehicle,
+                type,
+                amount,
+                paymentMethod
+            };
+            
+            appState.sales.push(newSale);
+            
+            // Guardar en localStorage
+            localStorage.setItem('parkmaster_sales', JSON.stringify(appState.sales));
+            
+            // Recargar datos
+            loadSales();
+            loadDashboardData();
+            loadAccountingData();
+            
+            // Cerrar modal
+            hideSaleModal();
+            
+            showNotification('Venta registrada correctamente', 'success');
+        }
+
+        function deleteSale(saleId) {
+            if (confirm('¿Está seguro de que desea eliminar esta venta?')) {
+                appState.sales = appState.sales.filter(s => s.id != saleId);
+                
+                // Guardar en localStorage
+                localStorage.setItem('parkmaster_sales', JSON.stringify(appState.sales));
+                
+                // Recargar datos
+                loadSales();
+                loadDashboardData();
+                loadAccountingData();
+                
+                showNotification('Venta eliminada correctamente', 'success');
+            }
+        }
+
+        function loadAccountingData() {
+            const container = document.getElementById('accounting-table-body');
+            
+            // Calcular estadísticas
+            const currentMonth = new Date().getMonth() + 1;
+            const currentYear = new Date().getFullYear();
+            
+            const currentMonthIncome = appState.sales
+                .filter(sale => {
+                    const saleDate = new Date(sale.date);
+                    return saleDate.getMonth() + 1 === currentMonth && saleDate.getFullYear() === currentYear;
+                })
+                .reduce((total, sale) => total + sale.amount, 0);
+                
+            const totalIncome = appState.sales.reduce((total, sale) => total + sale.amount, 0);
+            const activeClients = appState.clients.filter(c => c.status === 'active').length;
+            const totalSpaces = appState.spaces.length;
+            const occupiedSpaces = appState.spaces.filter(s => s.status === 'occupied').length;
+            const occupancyRate = totalSpaces > 0 ? (occupiedSpaces / totalSpaces) * 100 : 0;
+            
+            document.getElementById('current-month-income').textContent = `$${currentMonthIncome.toFixed(2)}`;
+            document.getElementById('total-income').textContent = `$${totalIncome.toFixed(2)}`;
+            document.getElementById('accounting-active-clients').textContent = activeClients;
+            document.getElementById('occupancy-rate').textContent = `${occupancyRate.toFixed(1)}%`;
+            
+            // Aplicar filtros
+            applyAccountingFilters();
+        }
+
+        function applyAccountingFilters() {
+            const year = document.getElementById('accounting-year').value;
+            const month = document.getElementById('accounting-month').value;
+            const type = document.getElementById('accounting-type').value;
+            
+            let filteredSales = [...appState.sales];
+            
+            // Filtrar por año
+            if (year !== 'all') {
+                filteredSales = filteredSales.filter(sale => {
+                    const saleYear = new Date(sale.date).getFullYear().toString();
+                    return saleYear === year;
+                });
+            }
+            
+            // Filtrar por mes
+            if (month !== 'all') {
+                filteredSales = filteredSales.filter(sale => {
+                    const saleMonth = new Date(sale.date).getMonth() + 1;
+                    return saleMonth.toString() === month;
+                });
+            }
+            
+            // Filtrar por tipo
+            if (type !== 'all') {
+                filteredSales = filteredSales.filter(sale => sale.type === type);
+            }
+            
+            // Cargar tabla con datos filtrados
+            const container = document.getElementById('accounting-table-body');
+            
+            if (filteredSales.length === 0) {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px;">
+                            <div class="empty-state">
+                                <i class="fas fa-chart-line"></i>
+                                <h3>No hay datos para mostrar</h3>
+                                <p>No se encontraron ingresos con los filtros aplicados</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            filteredSales.forEach(sale => {
+                html += `
+                    <tr>
+                        <td>${formatDate(sale.date)}</td>
+                        <td>${sale.concept}</td>
+                        <td>${sale.vehicle}</td>
+                        <td>
+                            <span class="status ${sale.type === 'suscripcion' ? 'active' : 
+                                              sale.type === 'venta' ? 'available' : 'warning'}">
+                                ${sale.type === 'suscripcion' ? 'Suscripción' : 
+                                  sale.type === 'venta' ? 'Venta Diaria' : 'Multa'}
+                            </span>
+                        </td>
+                        <td class="income-positive">$${sale.amount.toFixed(2)}</td>
+                        <td>${sale.paymentMethod}</td>
+                    </tr>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function loadProfile() {
+            const user = appState.currentUser;
+            
+            document.getElementById('profile-name').value = user.name;
+            document.getElementById('profile-email').value = user.email;
+            document.getElementById('profile-phone').value = user.phone || '';
+            document.getElementById('profile-address').value = user.address || '';
+            
+            // Limpiar campos de contraseña
+            document.getElementById('profile-current-password').value = '';
+            document.getElementById('profile-new-password').value = '';
+            document.getElementById('profile-confirm-password').value = '';
+        }
+
+        function saveProfile() {
+            const name = document.getElementById('profile-name').value;
+            const email = document.getElementById('profile-email').value;
+            const phone = document.getElementById('profile-phone').value;
+            const address = document.getElementById('profile-address').value;
+            const currentPassword = document.getElementById('profile-current-password').value;
+            const newPassword = document.getElementById('profile-new-password').value;
+            const confirmPassword = document.getElementById('profile-confirm-password').value;
+            
+            if (!name || !email) {
+                showNotification('Por favor, complete los campos obligatorios', 'error');
+                return;
+            }
+            
+            // Actualizar información básica
+            appState.currentUser.name = name;
+            appState.currentUser.email = email;
+            appState.currentUser.phone = phone;
+            appState.currentUser.address = address;
+            
+            // Actualizar en localStorage
+            const users = JSON.parse(localStorage.getItem('parkmaster_users'));
+            const userIndex = users.findIndex(u => u.id === appState.currentUser.id);
+            if (userIndex !== -1) {
+                users[userIndex] = appState.currentUser;
+                localStorage.setItem('parkmaster_users', JSON.stringify(users));
+            }
+            
+            localStorage.setItem('parkmaster_loggedInUser', JSON.stringify(appState.currentUser));
+            
+            // Actualizar contraseña si se proporciona
+            if (currentPassword && newPassword && confirmPassword) {
+                if (currentPassword !== appState.currentUser.password) {
+                    showNotification('La contraseña actual es incorrecta', 'error');
+                    return;
+                }
+                
+                if (newPassword !== confirmPassword) {
+                    showNotification('Las contraseñas nuevas no coinciden', 'error');
+                    return;
+                }
+                
+                appState.currentUser.password = newPassword;
+                users[userIndex].password = newPassword;
+                localStorage.setItem('parkmaster_users', JSON.stringify(users));
+                localStorage.setItem('parkmaster_loggedInUser', JSON.stringify(appState.currentUser));
+            }
+            
+            // Actualizar UI
+            document.getElementById('user-name').textContent = name;
+            
+            showNotification('Perfil actualizado correctamente', 'success');
+        }
+
+        function exportClientsToExcel() {
+            // Crear una hoja de cálculo con los datos de clientes
+            const ws = XLSX.utils.json_to_sheet(appState.clients.map(client => {
+                const space = appState.spaces.find(s => s.id == client.spaceId);
+                return {
+                    'Nombre': client.name,
+                    'Email': client.email,
+                    'Teléfono': client.phone,
+                    'Vehículo': client.vehicle,
+                    'Placa': client.plate,
+                    'Espacio': space ? space.number : 'No asignado',
+                    'Fecha Inicio': client.startDate,
+                    'Fecha Vencimiento': client.endDate,
+                    'Monto Mensual': client.amount,
+                    'Estado': client.status === 'active' ? 'Activo' : 
+                              client.status === 'warning' ? 'Por Vencer' : 'Vencido'
+                };
+            }));
+            
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+            XLSX.writeFile(wb, 'clientes_parkmaster.xlsx');
+            
+            showNotification('Datos exportados correctamente', 'success');
+        }
+
+        function exportSalesToExcel() {
+            // Crear una hoja de cálculo con los datos de ventas
+            const ws = XLSX.utils.json_to_sheet(appState.sales.map(sale => {
+                return {
+                    'Fecha': sale.date,
+                    'Concepto': sale.concept,
+                    'Vehículo/Placa': sale.vehicle,
+                    'Tipo': sale.type === 'suscripcion' ? 'Suscripción' : 
+                            sale.type === 'venta' ? 'Venta Diaria' : 'Multa',
+                    'Monto': sale.amount,
+                    'Método de Pago': sale.paymentMethod
+                };
+            }));
+            
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Ventas');
+            XLSX.writeFile(wb, 'ventas_parkmaster.xlsx');
+            
+            showNotification('Datos exportados correctamente', 'success');
+        }
+
+        function resetData() {
+            if (confirm('¿Está seguro de que desea resetear todos los datos? Esta acción no se puede deshacer.')) {
+                // Restaurar datos iniciales
+                appState.clients = initialData.clients;
+                appState.spaces = initialData.spaces;
+                appState.sales = initialData.sales;
+                
+                // Guardar en localStorage
+                localStorage.setItem('parkmaster_clients', JSON.stringify(initialData.clients));
+                localStorage.setItem('parkmaster_spaces', JSON.stringify(initialData.spaces));
+                localStorage.setItem('parkmaster_sales', JSON.stringify(initialData.sales));
+                
+                // Recargar datos
+                loadClients();
+                loadSpaces();
+                loadSales();
+                loadDashboardData();
+                loadAccountingData();
+                
+                showNotification('Datos reseteados correctamente', 'success');
+            }
+        }
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('es-ES', options);
+        }
+    </script>
+</body>
+</html>
